@@ -154,10 +154,10 @@ Modify `src/main/resources/application.properties`:
 ```properties
 spring.application.name=homehunter
 
-# Database Configuration (MySQL)
-spring.datasource.url=jdbc:mysql://localhost:3306/homehunter?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.username=root
-spring.datasource.password=root
+# Database Configuration (MySQL via docker-compose)
+spring.datasource.url=jdbc:mysql://localhost:3306/databaseHomehunter?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+spring.datasource.username=usernameHomehunter
+spring.datasource.password=passwordHomehunter
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
@@ -2252,3 +2252,18 @@ Plan complete and saved to `docs/superpowers/plans/2026-09-13-homehunter-unified
 **2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
 
 **Which approach?**
+
+---
+
+## Appendix A: Live Validation (executed 2026-09-13)
+
+Contratos validados contra instancia real (MySQL via docker-compose + app em :8080):
+
+- GET /api/v1/properties (defaults e com filtros type/bedrooms/minPrice/page/size) -> 200, PagedResultDto completo.
+- GET /api/v1/properties/{id} -> 200 (sources com portalName/externalId/url/price/announcedAt/collectedAt) e 404 para id inexistente.
+- POST /api/v1/properties/sync (body {}) -> 202 {status:enqueued}; 2o POST durante execucao -> 409 (single-flight OK).
+- Persistencia MySQL confirmada (2 properties / 3 tb_property_source) e deduplicacao observada (2 portais fundidos em 1 agrupador).
+
+Known limitations (batch real):
+- Todos os 4 portais bloqueiam scraping (ImovelWeb 403; demais retornam 0 listagens / anti-bot -> fallback injeta amostras). Contramedidas de anti-bot necessarias antes de producao.
+- Queda silenciosa do JVM durante scrape do Zap (stderr nao capturado); investigar com stderr capturado e timeout menor.

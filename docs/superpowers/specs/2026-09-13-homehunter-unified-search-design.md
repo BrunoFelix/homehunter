@@ -215,7 +215,7 @@ Ciclo: coleta → deduplica → persiste.
 - **`POST /api/v1/properties/sync`**
   - **Request Body** (opcional): escopo de coleta + filtros pré-armazenamento (`SyncRequestDto` mapeado para `SyncRequest`).
   - **Filtros pré-armazenamento**: `type`, `minPrice`, `maxPrice`, `minArea`, `maxArea`, `bedrooms`, `neighborhood` — aplicados **após** coleta e **antes** de persistir. Se vazio/null, todos os anúncios coletados são armazenados. Se preenchido, apenas os que correspondem aos filtros são persistidos.
-  - **Response 202**: `{ "status": "enqueued", "message": "Sincronização iniciada" }` — sem histórico/estado persistido de execução (YAGNI; logs internos servem de observabilidade).
+  - **Response 202**: `{ "status": "enqueued", "message": "Portal synchronization batch started" }` — sem histórico/estado persistido de execução (YAGNI; logs internos servem de observabilidade).
   - **Response 409**: sincronização já em andamento (single-flight).
 
 ### 6.2 Cron (`entrypoint.cron`)
@@ -278,6 +278,8 @@ Ciclo: coleta → deduplica → persiste.
 
 > Responsabilidade dos adapters `collector`: timeouts configuráveis, headers de navegação real e tratamento individual de falha (não propagar para os demais portais).
 
+**Banco local (docker-compose)**: `docker compose up -d` sobe MySQL 8 com `MYSQL_DATABASE=databaseHomehunter`, `MYSQL_USER=usernameHomehunter` / `MYSQL_PASSWORD=passwordHomehunter`. `application.properties` aponta para esses valores (`spring.datasource.url=jdbc:mysql://localhost:3306/databaseHomehunter...`). Fallback para H2 em memória via override de propriedades (`--spring.datasource.url=jdbc:h2:mem:...`) — o build inclui `runtimeOnly 'com.h2database:h2'` para viabilizar execução local sem MySQL.
+
 ---
 
 ## 9. Verification & Quality Plan
@@ -293,3 +295,14 @@ Ciclo: coleta → deduplica → persiste.
    - Mappers (`PropertyDatabaseMapper`, `PropertyRestMapper`).
 3. **Build & Artifact**:
    - `./gradlew check` (compilação Java 26 + todos os testes).
+
+### 9.1 Validação "ao vivo" (executada em 2026-09-13)
+Contratos **validados contra instância real** (MySQL via docker-compose + app em `:8080`):
+- `GET /api/v1/properties` (defaults e com filtros `type`, `bedrooms`, `minPrice`, `page`, `size`) → **200** com `PagedResultDto` (`content/page/size/totalElements/totalPages`) e `PropertyResponseDto` contendo `id`, `title`, `type`, `price`, `area`, `bedrooms`, `state`, `city`, `neighborhood` e `sources[]`.
+- `GET /api/v1/properties/{id}` → **200** com `sources[].portalName/externalId/url/price/announcedAt/collectedAt` (dates ISO-8601) e **404** para id inexistente.
+- `POST /api/v1/properties/sync` (body `{}`) → **202** `{status:enqueued}`; novo POST durante execução → **409** `{status:rejected}` (single-flight OK).
+- Persistência confirmada: 2 properties / 3 `tb_property_source` no MySQL; deduplicação observada (2 portais fundidos em 1 agrupador com 2 fontes).
+
+**Achados / limitações (risco para o batch real):**
+- **Todos os 4 portais bloqueiam scraping direto**: ImovelWeb respondeu **403**; Zap/VivaReal/Chaves na Mão retornaram **0 listagens** ("anti-bot engaged") — o fallback injeta dados de amostra. Necessário contra-medidas (User-Agent real, headers/JS rendering, proxy/rotacionamento) antes de produção.
+- **Queda silenciosa do JVM**: durante scrape do Zap (após ~40s de sync) o processo encerrou sem exceção no log (stderr não capturado no teste). Hipótese principal: stall de rede no fetch do portal; investigar com stderr capturado e timeout menor.

@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'databaseHomehunter'
+      MYSQL_USER: 'usernameHomehunter'
+      MYSQL_PASSWORD: 'passwordHomehunter'
+      MYSQL_ROOT_PASSWORD: 'passwordRootHomehunter'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - homehunter:/var/lib/mysql
+
+volumes:
+  homehunter:

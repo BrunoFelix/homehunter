@@ -35,7 +35,7 @@ public class PropertyEntity {
     @Column(name = "price", precision = 12, scale = 2, nullable = false)
     private BigDecimal price;
 
-    @Column(name = "area", precision = 8, scale = 2, nullable = false)
+    @Column(name = "area", nullable = false)
     private Double area;
 
     @Column(name = "bedrooms", nullable = false)
