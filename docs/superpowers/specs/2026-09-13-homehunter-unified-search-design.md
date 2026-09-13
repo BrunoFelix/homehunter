@@ -33,7 +33,7 @@ br.com.brunofelix.homehunter
 │   │   │   ├── Price.java               # Value Object (Currency & Amount)
 │   │   │   ├── Area.java                # Value Object (m²)
 │   │   │   ├── PropertyType.java        # Enum (CASA, APARTAMENTO)
-│   │   │   ├── PropertySource.java      # Entity (Portal Enum, External ID, URL, Price, Timestamp)
+│   │   │   ├── PropertySource.java      # Entity (Portal Enum, External ID, URL, Price, AnnouncedAt, CollectedAt)
 │   │   │   └── SearchQuery.java         # Value Object for filter criteria
 │   │   ├── port/
 │   │   │   ├── dataprovider/           # Output Ports (Interfaces)
@@ -89,8 +89,8 @@ br.com.brunofelix.homehunter
 - **`area`**: `Area` (Usable area in m²)
 - **`bedrooms`**: Integer
 - **`address`**: `Address` (`state`, `city`, `neighborhood`, `street`)
-- **`sources`**: `List<PropertySource>` (Portals where listing exists, URLs, individual portal prices, last sync time)
-- **`createdAt` / `updatedAt`**: `LocalDateTime`
+- **`sources`**: `List<PropertySource>` (Portals where listing exists, URLs, individual portal prices, listing creation date on portal, last sync time)
+- **`createdAt` / `updatedAt`**: `LocalDateTime` (internal database record timestamps)
 
 ### 3.2 Deduplication Workflow (`SyncPropertiesUseCase`)
 1. For each active `PropertyCollectorPort`:
@@ -151,7 +151,8 @@ br.com.brunofelix.homehunter
 | `external_id` | VARCHAR(100) | NOT NULL |
 | `url` | TEXT | NOT NULL |
 | `price` | DECIMAL(12,2) | NOT NULL |
-| `collected_at` | DATETIME | NOT NULL |
+| `announced_at` | DATETIME | NULL (data de criação/publicação do anúncio no portal) |
+| `collected_at` | DATETIME | NOT NULL (data da coleta em nosso banco) |
 
 ---
 
