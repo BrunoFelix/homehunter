@@ -1,0 +1,109 @@
+package br.com.brunofelix.homehunter.core.domain.service;
+
+import br.com.brunofelix.homehunter.core.domain.model.*;
+import org.junit.jupiter.api.Test;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class PropertyDeduplicationServiceTest {
+
+    private final PropertyDeduplicationService service = new PropertyDeduplicationService();
+
+    @Test
+    void shouldCreateNewPropertyWhenNoneExists() {
+        CollectedProperty collected = new CollectedProperty(
+                "Apartamento Lindo",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(300000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", "Av Boa Viagem"),
+                PortalName.ZAP_IMOVEIS,
+                "ext-123",
+                "https://zap.com/123",
+                LocalDateTime.now()
+        );
+
+        Property property = service.deduplicate(Optional.empty(), collected);
+
+        assertNotNull(property);
+        assertEquals(1, property.getSources().size());
+        assertEquals(PortalName.ZAP_IMOVEIS, property.getSources().get(0).portalName());
+        assertEquals(BigDecimal.valueOf(300000), property.getPrice().value());
+    }
+
+    @Test
+    void shouldMergeSourceIntoExistingProperty() {
+        CollectedProperty existingCollected = new CollectedProperty(
+                "Apto Boa Viagem",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(300000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                PortalName.ZAP_IMOVEIS,
+                "ext-123",
+                "https://zap.com/123",
+                LocalDateTime.now().minusDays(2)
+        );
+
+        Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
+
+        CollectedProperty newCollected = new CollectedProperty(
+                "Apartamento Vista Mar",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(290000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                PortalName.VIVA_REAL,
+                "viva-456",
+                "https://vivareal.com/456",
+                LocalDateTime.now()
+        );
+
+        Property merged = service.deduplicate(Optional.of(existing), newCollected);
+
+        assertEquals(2, merged.getSources().size());
+        assertEquals(BigDecimal.valueOf(290000), merged.getPrice().value());
+    }
+
+    @Test
+    void shouldKeepExistingSourceWhenSamePortalAndExternalId() {
+        CollectedProperty existingCollected = new CollectedProperty(
+                "Apto Boa Viagem",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(300000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                PortalName.ZAP_IMOVEIS,
+                "ext-123",
+                "https://zap.com/123",
+                LocalDateTime.now().minusDays(2)
+        );
+
+        Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
+
+        CollectedProperty updatedCollected = new CollectedProperty(
+                "Apto Boa Viagem Atualizado",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(310000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                PortalName.ZAP_IMOVEIS,
+                "ext-123",
+                "https://zap.com/123-v2",
+                LocalDateTime.now()
+        );
+
+        Property merged = service.deduplicate(Optional.of(existing), updatedCollected);
+
+        assertEquals(1, merged.getSources().size());
+        assertEquals("https://zap.com/123-v2", merged.getSources().get(0).url());
+    }
+}
