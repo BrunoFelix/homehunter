@@ -213,7 +213,8 @@ Ciclo: coleta → deduplica → persiste.
   - **Response 200**: detalhes completos incl. todas as fontes (`portalName`, `url`, preço no portal, `announcedAt`, `collectedAt`).
   - **Response 404**: imóvel não encontrado.
 - **`POST /api/v1/properties/sync`**
-  - **Request Body** (opcional): escopo de coleta customizado (`CollectionScopeRequestDto` mapeado para `CollectionScope`).
+  - **Request Body** (opcional): escopo de coleta + filtros pré-armazenamento (`SyncRequestDto` mapeado para `SyncRequest`).
+  - **Filtros pré-armazenamento**: `type`, `minPrice`, `maxPrice`, `minArea`, `maxArea`, `bedrooms`, `neighborhood` — aplicados **após** coleta e **antes** de persistir. Se vazio/null, todos os anúncios coletados são armazenados. Se preenchido, apenas os que correspondem aos filtros são persistidos.
   - **Response 202**: `{ "status": "enqueued", "message": "Sincronização iniciada" }` — sem histórico/estado persistido de execução (YAGNI; logs internos servem de observabilidade).
   - **Response 409**: sincronização já em andamento (single-flight).
 

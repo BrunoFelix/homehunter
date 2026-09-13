@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
@@ -45,6 +46,12 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
                     try {
                         log.info("Collecting properties from portal: {}", collector.getPortalName());
                         List<CollectedProperty> collectedList = collector.collect(scope);
+                        if (scope.filter() != null && scope.filter().hasFilter()) {
+                            collectedList = collectedList.stream()
+                                    .filter(scope.filter()::matches)
+                                    .collect(Collectors.toList());
+                            log.info("Applied pre-storage filter: {} properties kept from {}", collectedList.size(), collector.getPortalName());
+                        }
                         for (CollectedProperty collected : collectedList) {
                             try {
                                 PropertyId tempId = PropertyId.generate(

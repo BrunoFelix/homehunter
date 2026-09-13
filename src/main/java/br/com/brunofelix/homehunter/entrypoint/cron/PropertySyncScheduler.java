@@ -21,6 +21,6 @@ public class PropertySyncScheduler {
     @Scheduled(cron = "${app.collector.cron:0 0 3 * * *}")
     public void scheduledSync() {
         log.info("Scheduled property synchronization triggered.");
-        syncPort.sync(new CollectionScope("PE", null));
+        syncPort.sync(new CollectionScope("PE", null, null));
     }
 }

@@ -51,7 +51,7 @@ class SyncPropertiesUseCaseImplTest {
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
         when(repositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SyncStatus status = syncUseCase.sync(new CollectionScope("PE", List.of("Recife")));
+        SyncStatus status = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
         assertEquals(SyncStatus.ENQUEUED, status);
 
         Thread.sleep(500);
@@ -64,8 +64,8 @@ class SyncPropertiesUseCaseImplTest {
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
         when(repositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SyncStatus first = syncUseCase.sync(new CollectionScope("PE", List.of("Recife")));
-        SyncStatus second = syncUseCase.sync(new CollectionScope("PE", List.of("Recife")));
+        SyncStatus first = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
+        SyncStatus second = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
 
         assertEquals(SyncStatus.ENQUEUED, first);
         assertEquals(SyncStatus.REJECTED_RUNNING, second);

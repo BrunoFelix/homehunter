@@ -67,8 +67,8 @@ public class PropertyController {
     }
 
     @PostMapping("/sync")
-    @Operation(summary = "Trigger asynchronous portal synchronization batch")
-    public ResponseEntity<Map<String, String>> sync(@RequestBody(required = false) CollectionScopeRequestDto requestDto) {
+    @Operation(summary = "Trigger asynchronous portal synchronization batch with optional pre-storage filters")
+    public ResponseEntity<Map<String, String>> sync(@RequestBody(required = false) SyncRequestDto requestDto) {
         SyncStatus status = syncPort.sync(mapper.toDomain(requestDto));
         if (status == SyncStatus.REJECTED_RUNNING) {
             return ResponseEntity.status(409).body(Map.of("status", "rejected", "message", "Synchronization already in progress"));

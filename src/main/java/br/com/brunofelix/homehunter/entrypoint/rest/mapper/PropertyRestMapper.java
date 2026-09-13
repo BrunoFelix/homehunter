@@ -3,6 +3,8 @@ package br.com.brunofelix.homehunter.entrypoint.rest.mapper;
 import br.com.brunofelix.homehunter.core.application.model.CollectionScope;
 import br.com.brunofelix.homehunter.core.application.model.PagedResult;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
+import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
+import br.com.brunofelix.homehunter.core.domain.model.SyncFilterCriteria;
 import br.com.brunofelix.homehunter.entrypoint.rest.dto.*;
 import org.springframework.stereotype.Component;
 import java.util.stream.Collectors;
@@ -56,8 +58,24 @@ public class PropertyRestMapper {
 
     public CollectionScope toDomain(CollectionScopeRequestDto dto) {
         if (dto == null) {
-            return new CollectionScope("PE", null);
+            return new CollectionScope("PE", null, null);
         }
-        return new CollectionScope(dto.state(), dto.cities());
+        return new CollectionScope(dto.state(), dto.cities(), null);
+    }
+
+    public CollectionScope toDomain(SyncRequestDto dto) {
+        if (dto == null) {
+            return new CollectionScope("PE", null, null);
+        }
+        SyncFilterCriteria filter = new SyncFilterCriteria(
+                dto.type() != null ? PropertyType.valueOf(dto.type().toUpperCase()) : null,
+                dto.minPrice(),
+                dto.maxPrice(),
+                dto.minArea(),
+                dto.maxArea(),
+                dto.bedrooms(),
+                dto.neighborhood()
+        );
+        return new CollectionScope(dto.state(), dto.cities(), filter);
     }
 }
