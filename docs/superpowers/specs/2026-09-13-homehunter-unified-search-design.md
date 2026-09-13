@@ -8,129 +8,185 @@
 
 ## 1. Overview & Objective
 
-HomeHunter is a unified real estate search application designed to collect, aggregate, deduplicate, filter, and store property listings (houses and apartments) in Pernambuco (starting with Recife and surrounding areas) from four major real estate portals:
+HomeHunter is a unified real estate search application designed to collect, aggregate, deduplicate, filter, and store property listings (houses and apartments) in Pernambuco (starting with Recife) from four major real estate portals:
 - ZapImóveis
 - VivaReal
 - Chaves na Mão
 - ImovelWeb
 
-The application is structured using **Hexagonal Architecture (Ports & Adapters)**, **Domain-Driven Design (DDD)** principles, and **Clean Code** standards.
+The application is built on **Hexagonal Architecture (Ports & Adapters)**, **Domain-Driven Design (DDD)**, and **Clean Code** standards.
+
+### 1.1 Linguagem Ubíqua (Ubiquitous Language)
+| Termo | Definição |
+|---|---|
+| **Property (Imóvel)** | Aggregate Root que representa o imóvel único já consolidado entre portais. |
+| **PropertySource (Fonte do Imóvel)** | Registro de um anúncio do imóvel em um portal específico (URL, ID externo, preço, datas). |
+| **Portal** | Portal imobiliário externo de onde os anúncios são coletados (`PortalName`). |
+| **Sync (Sincronização)** | Processo de coleta dos portais + consolidação/deduplicação + persistência. |
+| **Anúncio criado (`announcedAt`)** | Data de criação/publicação do anúncio no próprio portal. |
+| **Coleta (`collectedAt`)** | Momento em que coletamos os dados do portal para nosso banco. |
 
 ---
 
-## 2. Architecture & Package Structure
+## 2. Principles & Architecture Rules
 
-The project strictly isolates domain logic from infrastructure and framework dependencies.
+1. **Regra de Dependência (Dependency Rule)**: as dependências apontam sempre *para dentro*. `domain` não conhece Spring, banco, HTTP ou adapters. `application` depende apenas de `domain`. `dataprovider` e `entrypoint` dependem dos ports de `core`. Nenhum fluxo de dados atravessa camadas intermediárias.
+2. **Layers**: todo o `core` é código de negócio testável em memória, sem contexto Spring.
+3. **Ports & Adapters**: `core` expõe interfaces (ports). Adapters (`dataprovider`/`entrypoint`) implementam esses ports. A montagem do grafo de dependências acontece em um único **Composition Root** na inicialização do Spring.
+4. **Persistência ignorante de domínio**: os adapters traduzem entidades JPA ↔ agregações de domínio. `PropertyRepositoryPort` só lida com modelos de domínio.
+5. **Anti-Corruption Layer (ACL)**: cada coletor traduz os DTOs específicos do portal para o modelo de domínio, isolando ontologias externas.
+
+---
+
+## 3. Package Structure (Hexagonal)
 
 ```
 br.com.brunofelix.homehunter
-├── core/                                # Pure Domain & Business Logic (Zero Spring dependencies)
-│   ├── domain/
-│   │   ├── model/                      # Entities, Aggregates & Value Objects
-│   │   │   ├── Property.java            # Aggregate Root
-│   │   │   ├── PropertyId.java          # Value Object (Deterministic Natural Identity Hash)
-│   │   │   ├── Address.java             # Value Object (State, City, Neighborhood, Street)
-│   │   │   ├── Price.java               # Value Object (Currency & Amount)
-│   │   │   ├── Area.java                # Value Object (m²)
-│   │   │   ├── PropertyType.java        # Enum (CASA, APARTAMENTO)
-│   │   │   ├── PropertySource.java      # Entity (Portal Enum, External ID, URL, Price, AnnouncedAt, CollectedAt)
-│   │   │   └── SearchQuery.java         # Value Object for filter criteria
-│   │   ├── port/
-│   │   │   ├── dataprovider/           # Output Ports (Interfaces)
-│   │   │   │   ├── PropertyRepositoryPort.java
-│   │   │   │   └── PropertyCollectorPort.java
-│   │   │   └── entrypoint/             # Input Ports (Use Case Interfaces)
-│   │   │       ├── SearchPropertiesInputPort.java
-│   │   │       └── SyncPropertiesInputPort.java
-│   │   └── usecase/                    # Business Use Cases
-│   │       ├── SearchPropertiesUseCase.java
-│   │       └── SyncPropertiesUseCase.java
 │
-├── dataprovider/                        # Output Adapters (Infrastructure & External Integrations)
-│   ├── database/                       # MySQL Persistence Adapter
-│   │   ├── PropertyRepositoryAdapter.java
+├── core/                                # Núcleo (Domain + Application) - Zero dependências externas
+│   ├── domain/                          # ── DOMAIN LAYER ──
+│   │   ├── model/                       # Entidades, Value Objects (imutáveis), Enum
+│   │   │   ├── Property.java            #    Aggregate Root
+│   │   │   ├── PropertyId.java          #    Value Object (identidade natural determinística)
+│   │   │   ├── PropertyType.java        #    Enum (CASA, APARTAMENTO)
+│   │   │   ├── PortalName.java          #    Enum (ZAP, VIVAREAL, CHAVES_NA_MAO, IMOVELWEB)
+│   │   │   ├── Price.java               #    Value Object (moeda BRL + valor)
+│   │   │   ├── Area.java                #    Value Object (m²)
+│   │   │   ├── Bedrooms.java            #    Value Object (quantidade de quartos)
+│   │   │   ├── Address.java             #    Value Object (estado, cidade, bairro, logradouro?)
+│   │   │   ├── PropertySource.java      #    Entidade interna do agregado Property
+│   │   │   └── PropertySearchCriteria.java  # Value Object (filtros de busca)
+│   │   ├── service/                     # ── DOMAIN SERVICES ──
+│   │   │   └── PropertyDeduplicationService.java  # Regra de consolidação/deduplicação
+│   │   └── exception/                   # Exceções de domínio
+│   │       └── DomainException.java
+│   │
+│   └── application/                     # ── APPLICATION LAYER ──
+│       ├── usecase/                     # Application/Use Case Services (orquestração)
+│       │   ├── SyncPropertiesUseCase.java         # Coleta → deduplica → persiste
+│       │   ├── SyncPropertiesUseCaseImpl.java
+│       │   ├── SearchPropertiesUseCase.java       # Consulta com filtros
+│       │   └── SearchPropertiesUseCaseImpl.java
+│       └── port/                        # ── PORTS (interfaces) ──
+│           ├── in/                      # Driving Ports (consumidos pelos entrypoints)
+│           │   ├── SyncPropertiesInputPort.java
+│           │   └── SearchPropertiesInputPort.java
+│           └── out/                     # Driven Ports (implementados pelos dataproviders)
+│               ├── PropertyRepositoryPort.java
+│               └── PropertyCollectorPort.java
+│
+├── dataprovider/                        # ── DRIVEN ADAPTERS (infraestrutura externa) ──
+│   ├── database/                        # Persistência MySQL (Spring Data JPA)
+│   │   ├── PropertyRepositoryAdapter.java        # Implementa PropertyRepositoryPort
 │   │   ├── entity/
 │   │   │   ├── PropertyEntity.java
 │   │   │   └── PropertySourceEntity.java
 │   │   ├── mapper/
-│   │   │   └── PropertyDatabaseMapper.java
+│   │   │   └── PropertyDatabaseMapper.java       # Entity ↔ Agregado de domínio
 │   │   └── repository/
-│   │       └── SpringDataPropertyRepository.java
-│   └── collector/                      # External Portal Scraping Adapters
-│       ├── ZapImoveisCollectorAdapter.java
+│   │       └── SpringDataPropertyRepository.java # Spring Data (detalhe de implementação)
+│   │
+│   └── collector/                       # Coleta de portais externos + ACL
+│       ├── anticorruption/              # Anti-Corruption Layer
+│       │   ├── PortalPropertyNormalizer.java     # Normalização (strings, valores)
+│       │   └── PortalPropertyParser.java         # DTO externo → Property (parcial)
+│       ├── ZapImoveisCollectorAdapter.java       # Implementa PropertyCollectorPort
 │       ├── VivaRealCollectorAdapter.java
 │       ├── ChavesNaMaoCollectorAdapter.java
 │       └── ImovelWebCollectorAdapter.java
 │
-└── entrypoint/                          # Input Adapters (REST Controllers & Schedulers)
-    ├── rest/
+└── entrypoint/                          # ── DRIVING ADAPTERS (entrada do sistema) ──
+    ├── rest/                            # Controllers REST (Spring Web)
     │   ├── PropertyController.java
     │   ├── dto/
     │   │   ├── PropertyResponseDto.java
     │   │   ├── PropertySourceResponseDto.java
     │   │   └── PropertySearchRequestDto.java
     │   └── mapper/
-    │       └── PropertyRestMapper.java
-    └── cron/
+    │       └── PropertyRestMapper.java            # Modelo de domínio ↔ DTO
+    └── cron/                            # Agendamentos (@Scheduled)
         └── PropertySyncScheduler.java
 ```
 
 ---
 
-## 3. Domain Model & Natural Identity (Deduplication)
+## 4. Domain Model & Invariants
 
-### 3.1 Aggregate Root: `Property`
-- **`PropertyId`**: Deterministic Value Object created from a SHA-256 fingerprint of normalized property attributes:
-  `SHA256("PE" + "|" + "RECIFE" + "|" + normalized(NEIGHBORHOOD) + "|" + TYPE + "|" + AREA_M2 + "|" + BEDROOMS)`
-  *Benefit:* Serves as the primary key (`id`) in MySQL. Re-collecting an identical property across different portals automatically hits the same `PropertyId`, eliminating redundant rows and allowing seamless source merging.
+### 4.1 Aggregate Root: `Property`
+- **`PropertyId`**: Value Object de **identidade natural determinística**, imutável. Derivado via SHA-256 do fingerprint canônico e normalizado do imóvel:
+  `SHA256(STATE + "|" + CITY + "|" + normalized(NEIGHBORHOOD) + "|" + TYPE + "|" + AREA_M2 + "|" + BEDROOMS)`
+  Serve como PK no MySQL. Recoletar o mesmo imóvel em outro portal gera o mesmo `PropertyId`, permitindo fusão de fontes sem duplicar linhas.
 - **`title`**: String
 - **`type`**: `PropertyType` (`CASA`, `APARTAMENTO`)
-- **`price`**: `Price` (Consolidated/latest price)
-- **`area`**: `Area` (Usable area in m²)
-- **`bedrooms`**: Integer
-- **`address`**: `Address` (`state`, `city`, `neighborhood`, `street`)
-- **`sources`**: `List<PropertySource>` (Portals where listing exists, URLs, individual portal prices, listing creation date on portal, last sync time)
-- **`createdAt` / `updatedAt`**: `LocalDateTime` (internal database record timestamps)
+- **`price`**: `Price` (valor consolidado / mais recente)
+- **`area`**: `Area` (área útil em m²)
+- **`bedrooms`**: `Bedrooms`
+- **`address`**: `Address` (`state`, `city`, `neighborhood`, `street` opcional)
+- **`sources`**: `List<PropertySource>` (agregado composto; anúncios por portal)
+- **`createdAt` / `updatedAt`**: `LocalDateTime` (timestamps internos do banco)
 
-### 3.2 Deduplication Workflow (`SyncPropertiesUseCase`)
-1. For each active `PropertyCollectorPort`:
-   - Fetch properties matching default Pernambuco criteria.
-2. For each fetched property candidate:
-   - Compute its `PropertyId` deterministic hash.
-   - Query `PropertyRepositoryPort.findById(propertyId)`.
-   - **If exists:**
-     - Update price/area if updated.
-     - Add/update portal entry in `sources` list.
-   - **If new:**
-     - Create new `Property` aggregate and add initial portal in `sources`.
-3. Save updated/created `Property` aggregate via `PropertyRepositoryPort`.
+### 4.2 Invariantes de Domínio (aplicados em fábricas/construtores)
+- `Price.value > 0`
+- `Area.value > 0`
+- `Bedrooms.value >= 0`
+- `state` e `city` obrigatórios; `street` opcional
+- `PropertyId` imutável e derivado apenas de atributos naturais
+- `PropertySource` exige `portalName`, `externalId` e `url` não nulos
+- Violações lançam `DomainException`; objetos nunca nascem em estado inválido
+
+### 4.3 Domain Service: `PropertyDeduplicationService`
+Encapsula a regra de consolidação (comportamento entre agregados/valores):
+1. Normaliza atributos (bairro em caixa, valores arredondados, tipo padronizado).
+2. Gera/valida o `PropertyId` canônico.
+3. Dado um anúncio coletado, decide se **funde** em uma `Property` existente (atualiza `price`/`area` e adiciona/atualiza `PropertySource`) ou **cria** uma nova `Property`.
 
 ---
 
-## 4. API & Interface Specifications
+## 5. Application Layer (Use Cases)
 
-### 4.1 REST API (`/api/v1/properties`)
+Application Services orquestram, sem conter regras de negócio (essas vivem em `domain`).
 
+### 5.1 `SyncPropertiesUseCase`
+1. Para cada `PropertyCollectorPort` ativo, busca anúncios do escopo (Pernambuco).
+2. Para cada anúncio, usa `PropertyDeduplicationService` para deduplicar/consolidar.
+3. Persiste agregados afetados via `PropertyRepositoryPort` (transação atômica por agregado).
+> Tolerância a falhas: se um portal falha, os demais continuam sem derrubar o job.
+
+### 5.2 `SearchPropertiesUseCase`
+1. Recebe `PropertySearchCriteria` (estado, cidade, bairro, tipo, faixa de preço, faixa de área, quartos).
+2. Consulta `PropertyRepositoryPort.search(criteria)` paginado.
+3. Retorna agregações de domínio para o adaptador de entrada.
+
+### 5.3 Ports
+- **Driving (`core.application.port.in`)**: `SyncPropertiesInputPort`, `SearchPropertiesInputPort` — contratos consumidos por `entrypoint`.
+- **Driven (`core.application.port.out`)**: `PropertyRepositoryPort`, `PropertyCollectorPort` — contratos implementados por `dataprovider`.
+
+---
+
+## 6. API & Interface Specifications (Driving Adapters)
+
+### 6.1 REST API (`/api/v1/properties`)
 - **`GET /api/v1/properties`**
   - **Query Parameters**: `state` (default "PE"), `city` (default "Recife"), `neighborhood`, `type` (`CASA`/`APARTAMENTO`), `minPrice`, `maxPrice`, `minArea`, `maxArea`, `bedrooms`, `page`, `size`.
-  - **Response**: Paginated list of unified properties with their active source URLs.
-
+  - **Response**: lista paginada de imóveis unificados com links das fontes ativas.
 - **`GET /api/v1/properties/{id}`**
-  - **Path Parameter**: `id` (PropertyId string)
-  - **Response**: Complete property details including history and links to all portals (Zap, VivaReal, etc.).
-
+  - **Path Parameter**: `id` (`PropertyId`)
+  - **Response**: detalhes completos incluindo todas as fontes (portal, URL, preço no portal, `announcedAt`, `collectedAt`).
 - **`POST /api/v1/properties/sync`**
-  - **Trigger**: Asynchronously starts the portal collection & unification batch job.
-  - **Response**: `202 Accepted` with execution status message.
+  - **Trigger**: inicia o job de sincronização/coleta de forma assíncrona.
+  - **Response**: `202 Accepted` com status de execução.
+
+### 6.2 Cron (`entrypoint.cron`)
+- `PropertySyncScheduler`: dispara `SyncPropertiesUseCase` via `@Scheduled` com cron configurável em `application.properties`.
 
 ---
 
-## 5. Persistence & MySQL Schema
+## 7. Persistence & MySQL Schema (Driven Adapter)
 
 ### Table: `tb_property`
 | Column | Type | Constraints |
 |---|---|---|
-| `id` | VARCHAR(64) | PRIMARY KEY (Deterministic Hash) |
+| `id` | VARCHAR(64) | PRIMARY KEY (deterministic `PropertyId`) |
 | `title` | VARCHAR(255) | NOT NULL |
 | `type` | VARCHAR(20) | NOT NULL |
 | `price` | DECIMAL(12,2) | NOT NULL |
@@ -154,15 +210,20 @@ br.com.brunofelix.homehunter
 | `announced_at` | DATETIME | NULL (data de criação/publicação do anúncio no portal) |
 | `collected_at` | DATETIME | NOT NULL (data da coleta em nosso banco) |
 
+> Invariante de persistência: `tb_property_source` e `tb_property` são persistidas atomicamente pelo `PropertyRepositoryAdapter` (um aggregate = uma transação).
+
 ---
 
-## 6. Verification & Quality Plan
+## 8. Verification & Quality Plan
 
-1. **Unit Testing (`core`)**:
-   - Test domain entities and `PropertyId` hash generation consistency.
-   - Test `SyncPropertiesUseCase` deduplication logic with Mockito for repositories and collectors.
+1. **Unit Testing (`core`)** — testado sem Spring:
+   - Fábricas/construtores e invariantes (`DomainException`s).
+   - `PropertyId` determinístico: mesmo fingerprint → mesmo ID.
+   - `PropertyDeduplicationService` (fusão vs. criação, atualização de price/area/sources).
+   - Use cases com Mockito (repos e collectors mockados).
 2. **Integration Testing (`dataprovider` & `entrypoint`)**:
-   - Database repository integration tests using Spring Boot Test & H2 / MySQL test profile.
-   - Controller REST integration tests using `MockMvc`.
-3. **Build & Code Verification**:
-   - `./gradlew check` (compile Java 26, run tests).
+   - `PropertyRepositoryAdapter` (H2/MySQL de teste, Testcontainers).
+   - Controllers REST (MockMvc).
+   - Mappers (`PropertyDatabaseMapper`, `PropertyRestMapper`).
+3. **Build & Verification**:
+   - `./gradlew check` (compilação Java 26 + todos os testes).
