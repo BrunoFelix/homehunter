@@ -2265,5 +2265,7 @@ Contratos validados contra instancia real (MySQL via docker-compose + app em :80
 - Persistencia MySQL confirmada (2 properties / 3 tb_property_source) e deduplicacao observada (2 portais fundidos em 1 agrupador).
 
 Known limitations (batch real):
-- Todos os 4 portais bloqueiam scraping (ImovelWeb 403; demais retornam 0 listagens / anti-bot -> fallback injeta amostras). Contramedidas de anti-bot necessarias antes de producao.
+- Chaves na Mao: funcional via API XHR JSON (`GET /api/realestate/listing/items/?level1=casas-a-venda&level2=pe-recife&filtro=cid:[5302],tim:[1],pmax:500000&pg={pg}&quebra=[6000]&server=0&viewport=desktop`); pagina de listagem e HTML Next.js. Coletor valida status/estrutura, respeita maxPages/totalPages (~400) e itera pg=1..10; markers pagination/banner sao ignorados.
+- ImovelWeb: endpoint real e POST `https://www.imovelweb.com.br/rplis-api/postings` com payload JSON fixo (moneda=3, tipoDePropiedad "2,1", tipoDeOperacion 1, city "105406,105302", pagina). Bloqueado por Cloudflare challenge neste ambiente ("Just a moment...") -> fallback injeta amostra.
+- Zap e VivaReal ainda bloqueiam scraping (0 listagens / anti-bot -> fallback amostra). Contramedidas de anti-bot necessarias antes de producao.
 - Queda silenciosa do JVM durante scrape do Zap (stderr nao capturado); investigar com stderr capturado e timeout menor.
