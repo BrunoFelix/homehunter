@@ -77,8 +77,9 @@ static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/lis
     public ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer,
                                      @Value("${app.collector.max-pages:0}") int maxPages,
                                      @Value("${app.collector.pause-every-pages:20}") int pauseEveryPages,
-                                     @Value("${app.collector.pause-duration:10s}") Duration pauseDuration) {
-        super(normalizer, DEFAULT_API_URL, ZAP_CONFIG, maxPages, pauseEveryPages, pauseDuration);
+                                     @Value("${app.collector.pause-duration:10s}") Duration pauseDuration,
+                                     @Value("${app.collector.politeness-delay:500ms}") Duration politenessDelay) {
+        super(normalizer, DEFAULT_API_URL, ZAP_CONFIG, maxPages, Throttle.of(politenessDelay, pauseEveryPages, pauseDuration));
     }
 
     ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner) {
@@ -86,10 +87,14 @@ static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/lis
     }
 
     ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages) {
-        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, 0, Duration.ZERO);
+        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, Throttle.none());
     }
 
     ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages, int pauseEveryPages, Duration pauseDuration) {
-        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, pauseEveryPages, pauseDuration);
+        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, Throttle.of(Duration.ZERO, pauseEveryPages, pauseDuration));
+    }
+
+    ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages, Throttle throttle) {
+        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, throttle);
     }
 }

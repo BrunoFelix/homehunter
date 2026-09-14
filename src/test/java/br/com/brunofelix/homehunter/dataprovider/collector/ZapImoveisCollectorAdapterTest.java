@@ -157,6 +157,27 @@ class ZapImoveisCollectorAdapterTest {
     }
 
     @Test
+    void shouldApplyPolitenessDelayPerPage() {
+        List<String> urls = new ArrayList<>();
+        GlueApiCollectorSupport.CurlRunner runner = url -> {
+            assertValidZapApiUrl(url, pageOf(url));
+            urls.add(url);
+            return jsonResult(listingPage(90, APTO));
+        };
+        Throttle throttle = Throttle.of(Duration.ofMillis(200), 0, Duration.ZERO);
+        ZapImoveisCollectorAdapter adapter = new ZapImoveisCollectorAdapter(
+                new PortalPropertyNormalizer(), API_URL, runner, 0, throttle);
+
+        long start = System.currentTimeMillis();
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(3, results.size());
+        assertEquals(List.of(1, 2, 3), requestPages(urls));
+        assertTrue(elapsed >= 400, "expected ~200ms politeness delay per page, took " + elapsed + " ms");
+    }
+
+    @Test
     void shouldInjectSampleWhenCurlFails() {
         List<String> urls = new ArrayList<>();
         ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> GlueApiCollectorSupport.CurlResult.failure());

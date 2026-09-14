@@ -59,7 +59,7 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 - Cada página loga em `info`: `loading page X/Y...` (a 1ª ainda sem total conhecido). Extras: HTTP não-200, estrutura inesperada e cap configurado logam `warn`.
 - `app.collector.max-pages` (default `0`) = teto de segurança opcional; `>0` limita a coleta.
 - Escopo geográfico (`CollectionScope` state/cities) é honrado pós-coleta via `CollectionScopeFilter` em **todos** os collectors.
-- **Pausa anti-DDoS**: a cada `app.collector.pause-every-pages` páginas, o collector dorme `app.collector.pause-duration` (default: 20 páginas / 10s) para evitar ser interpretado como ataque.
+- **Throttling anti-DDoS**: `app.collector.politeness-delay` (default `500ms`) aplica um delay entre **cada página** com jitter de ±30% (evita padrão periódico); a cada `app.collector.pause-every-pages` páginas (default `20`) ainda dorme `app.collector.pause-duration` (default `10s`) como freio macro.
 - Fallback de amostra (1 imóvel) **somente** quando a coleta retorna 0 listagens ao vivo (anti-bot).
 
 ## Configuração dos collectors (`application.properties`)
@@ -70,8 +70,8 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 | `app.collector.max-pages` | `0` (coleta tudo) |
 | `app.collector.scope.cities` | `RECIFE` |
 | `app.collector.cron` | `0 0 3 * * *` |
-- `app.collector.timeout` / `politeness-delay` | `30s` / `500ms` |
-| `app.collector.pause-every-pages` | `20` | Pausa a cada N páginas (0 = desabilitado)
+| `app.collector.timeout` / `politeness-delay` | `30s` / `500ms` | Delay por página (±30% jitter) |
+| `app.collector.pause-every-pages` | `20` | Pausa a cada N páginas (0 = desabilitado) |
 | `app.collector.pause-duration` | `10s` | Duração da pausa entre lotes |
 
 ## Identidade, deduplicação e normalização

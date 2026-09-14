@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -50,21 +49,19 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     private final CurlRunner curlRunner;
     private final PortalConfig config;
     private final int maxPages;
-    private final int pauseEveryPages;
-    private final long pauseDurationMs;
+    private final Throttle throttle;
 
-    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, PortalConfig config, int maxPages, int pauseEveryPages, Duration pauseDuration) {
+    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, PortalConfig config, int maxPages, Throttle throttle) {
         this.normalizer = normalizer;
         this.apiUrl = apiUrl;
         this.curlRunner = curlRunner;
         this.config = config;
         this.maxPages = maxPages;
-        this.pauseEveryPages = pauseEveryPages;
-        this.pauseDurationMs = pauseDuration == null ? 0 : pauseDuration.toMillis();
+        this.throttle = throttle;
     }
 
-    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, PortalConfig config, int maxPages, int pauseEveryPages, Duration pauseDuration) {
-        this(normalizer, apiUrl, new SystemCurlRunner(config.portalLabel(), config.xDomain(), config.tempFilePrefix()), config, maxPages, pauseEveryPages, pauseDuration);
+    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, PortalConfig config, int maxPages, Throttle throttle) {
+        this(normalizer, apiUrl, new SystemCurlRunner(config.portalLabel(), config.xDomain(), config.tempFilePrefix()), config, maxPages, throttle);
     }
 
     @Override
@@ -78,7 +75,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         int declaredMax = 0;
         for (int page = 1; ; page++) {
             try {
-                pauseAtBatchBoundary(page);
+                throttle(page);
                 if (declaredMax > 0) {
                     log.info("{} loading page {}/{}...", config.portalLabel(), page, declaredMax);
                 } else {
@@ -152,18 +149,11 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 .collect(Collectors.toList());
     }
 
-    protected void pauseAtBatchBoundary(int page) {
-        if (pauseEveryPages <= 0 || pauseDurationMs <= 0 || page <= 1 || (page - 1) % pauseEveryPages != 0) {
+    protected void throttle(int page) {
+        if (throttle == null) {
             return;
         }
-        log.info("{} sleeping {} ms after {} page(s) to avoid being rate-limited as DDoS...",
-                config.portalLabel(), pauseDurationMs, page - 1);
-        try {
-            Thread.sleep(pauseDurationMs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("{} interrupt received while throttling; continuing.", config.portalLabel());
-        }
+        throttle.apply(page, config.portalLabel());
     }
 
     private JsonNode itemsOf(JsonNode root) {

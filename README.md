@@ -66,7 +66,7 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 | `app.collector.max-pages` | `0` | **0 = coleta todas as páginas** declaradas pela API; >0 limita a um teto de segurança |
 | `app.collector.cron` | `0 0 3 * * *` | Cron do sync automático |
 | `app.collector.timeout` | `30s` | Timeout das requisições |
-| `app.collector.politeness-delay` | `500ms` | Atraso de cortesia entre páginas |
+| `app.collector.politeness-delay` | `500ms` | Delay por página (±30% jitter) |
 | `app.collector.pause-every-pages` | `20` | Pausa a cada N páginas (0 = desabilitado) |
 | `app.collector.pause-duration` | `10s` | Duração da pausa entre lotes |
 
@@ -75,6 +75,7 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 - **Paginação completa**: cada collector percorre todas as páginas até o total declarado (`search.totalCount` / `metadata.totalPages`), sem cap fixo. Para PE/Recife no ZapImóveis isso significa ~244 páginas × 30 itens (~7300 anúncios).
 - **Totais visíveis em log**: cada página loga `loading page X/Y...` (na 1ª ainda sem total conhecido).
 - **Escopo geográfico honrado**: `CollectionScope` (estado/cidades) é aplicado como filtro pós-coleta em todos os collectors.
+- **Throttling anti-DDoS**: delay por página (`politeness-delay`, ±30% de jitter) + pausa de `pause-duration` a cada `pause-every-pages` páginas.
 - **Fallback de amostra**: apenas quando a coleta retorna 0 listagens ao vivo (anti-bot), injeta 1 amostra para robustez.
 
 ## Identidade, deduplicação e normalização

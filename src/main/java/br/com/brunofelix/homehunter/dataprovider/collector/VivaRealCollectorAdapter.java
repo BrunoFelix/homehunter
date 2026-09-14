@@ -89,8 +89,9 @@ static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings
     public VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer,
                                    @Value("${app.collector.max-pages:0}") int maxPages,
                                    @Value("${app.collector.pause-every-pages:20}") int pauseEveryPages,
-                                   @Value("${app.collector.pause-duration:10s}") Duration pauseDuration) {
-        super(normalizer, DEFAULT_API_URL, VIVA_CONFIG, maxPages, pauseEveryPages, pauseDuration);
+                                   @Value("${app.collector.pause-duration:10s}") Duration pauseDuration,
+                                   @Value("${app.collector.politeness-delay:500ms}") Duration politenessDelay) {
+        super(normalizer, DEFAULT_API_URL, VIVA_CONFIG, maxPages, Throttle.of(politenessDelay, pauseEveryPages, pauseDuration));
     }
 
     VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner) {
@@ -98,6 +99,6 @@ static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings
     }
 
     VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages) {
-        super(normalizer, apiUrl, curlRunner, VIVA_CONFIG, maxPages, 0, Duration.ZERO);
+        super(normalizer, apiUrl, curlRunner, VIVA_CONFIG, maxPages, Throttle.none());
     }
 }
