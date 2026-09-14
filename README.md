@@ -67,6 +67,8 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 | `app.collector.cron` | `0 0 3 * * *` | Cron do sync automático |
 | `app.collector.timeout` | `30s` | Timeout das requisições |
 | `app.collector.politeness-delay` | `500ms` | Atraso de cortesia entre páginas |
+| `app.collector.pause-every-pages` | `20` | Pausa a cada N páginas (0 = desabilitado) |
+| `app.collector.pause-duration` | `10s` | Duração da pausa entre lotes |
 
 ### Comportamento de coleta
 

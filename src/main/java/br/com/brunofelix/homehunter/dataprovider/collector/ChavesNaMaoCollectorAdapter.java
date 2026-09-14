@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -50,21 +51,32 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     private final String baseUrl;
     private final String listingPath;
     private final int maxPages;
+    private final int pauseEveryPages;
+    private final long pauseDurationMs;
 
     @Autowired
-    public ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, @Value("${app.collector.max-pages:0}") int maxPages) {
-        this(normalizer, DEFAULT_BASE_URL, DEFAULT_LISTING_PATH, maxPages);
+    public ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer,
+                                       @Value("${app.collector.max-pages:0}") int maxPages,
+                                       @Value("${app.collector.pause-every-pages:20}") int pauseEveryPages,
+                                       @Value("${app.collector.pause-duration:10s}") Duration pauseDuration) {
+        this(normalizer, DEFAULT_BASE_URL, DEFAULT_LISTING_PATH, maxPages, pauseEveryPages, pauseDuration);
     }
 
     ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, String baseUrl, String listingPath) {
-        this(normalizer, baseUrl, listingPath, 0);
+        this(normalizer, baseUrl, listingPath, 0, 0, Duration.ZERO);
     }
 
     ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, String baseUrl, String listingPath, int maxPages) {
+        this(normalizer, baseUrl, listingPath, maxPages, 0, Duration.ZERO);
+    }
+
+    ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, String baseUrl, String listingPath, int maxPages, int pauseEveryPages, Duration pauseDuration) {
         this.normalizer = normalizer;
         this.baseUrl = baseUrl;
         this.listingPath = listingPath;
         this.maxPages = maxPages;
+        this.pauseEveryPages = pauseEveryPages;
+        this.pauseDurationMs = pauseDuration == null ? 0 : pauseDuration.toMillis();
     }
 
     @Override
@@ -81,6 +93,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         List<CollectedProperty> results = new ArrayList<>();
         int declaredMax = 0;
         for (int page = 1; ; page++) {
+            pauseAtBatchBoundary(page);
             if (declaredMax > 0) {
                 log.info("Chaves na Mão loading page {}/{}...", page, declaredMax);
             } else {
@@ -158,6 +171,20 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         return results.stream()
                 .filter(CollectionScopeFilter.matches(scope))
                 .collect(Collectors.toList());
+    }
+
+    private void pauseAtBatchBoundary(int page) {
+        if (pauseEveryPages <= 0 || pauseDurationMs <= 0 || page <= 1 || (page - 1) % pauseEveryPages != 0) {
+            return;
+        }
+        log.info("Chaves na Mão sleeping {} ms after {} page(s) to avoid being rate-limited as DDoS...",
+                pauseDurationMs, page - 1);
+        try {
+            Thread.sleep(pauseDurationMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Chaves na Mão interrupt received while throttling; continuing.");
+        }
     }
 
     private JsonNode itemsOf(JsonNode root) {

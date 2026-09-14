@@ -8,6 +8,7 @@ import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.Portal
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,6 +134,26 @@ class ZapImoveisCollectorAdapterTest {
 
         assertEquals(3, results.size());
         assertEquals(List.of(1, 2, 3), requestPages(urls));
+    }
+
+    @Test
+    void shouldPauseAtBatchBoundary() {
+        List<String> urls = new ArrayList<>();
+        GlueApiCollectorSupport.CurlRunner runner = url -> {
+            assertValidZapApiUrl(url, pageOf(url));
+            urls.add(url);
+            return jsonResult(listingPage(605, APTO));
+        };
+        ZapImoveisCollectorAdapter adapter = new ZapImoveisCollectorAdapter(
+                new PortalPropertyNormalizer(), API_URL, runner, 0, 20, Duration.ofMillis(300));
+
+        long start = System.currentTimeMillis();
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(21, results.size());
+        assertEquals(21, requestPages(urls).size());
+        assertTrue(elapsed >= 250, "expected a pause between page batches, took " + elapsed + " ms");
     }
 
     @Test
