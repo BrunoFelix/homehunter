@@ -70,8 +70,14 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
         List<CollectedProperty> results = new ArrayList<>();
+        int declaredMax = 0;
         for (int page = 1; ; page++) {
             try {
+                if (declaredMax > 0) {
+                    log.info("{} loading page {}/{}...", config.portalLabel(), page, declaredMax);
+                } else {
+                    log.info("{} loading page {}...", config.portalLabel(), page);
+                }
                 CurlResult result = curlRunner.execute(buildUrl(page));
 
                 if (result.statusCode() != 200) {
@@ -102,7 +108,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 if (parsed == 0) {
                     break;
                 }
-                int declaredMax = declaredTotalPages(root);
+                declaredMax = declaredTotalPages(root);
                 if (declaredMax > 0 && page >= declaredMax) {
                     log.debug("{} fully collected after {} page(s).", config.portalLabel(), page);
                     break;

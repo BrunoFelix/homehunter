@@ -79,7 +79,13 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
         List<CollectedProperty> results = new ArrayList<>();
+        int declaredMax = 0;
         for (int page = 1; ; page++) {
+            if (declaredMax > 0) {
+                log.info("Chaves na Mão loading page {}/{}...", page, declaredMax);
+            } else {
+                log.info("Chaves na Mão loading page {}...", page);
+            }
             String targetUrl = buildUrl(page);
             try {
                 Connection.Response response = Jsoup.connect(targetUrl)
@@ -116,7 +122,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 if (parsed == 0) {
                     break;
                 }
-                int declaredMax = declaredMaxPages(root);
+                declaredMax = declaredMaxPages(root);
                 if (declaredMax > 0 && page >= declaredMax) {
                     log.debug("Chaves na Mão fully collected after {} page(s).", page);
                     break;
