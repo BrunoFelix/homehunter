@@ -10,6 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@ConditionalOnProperty(name = "app.collector.zapimoveis.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class ZapImoveisCollectorAdapter implements PropertyCollectorPort {
 

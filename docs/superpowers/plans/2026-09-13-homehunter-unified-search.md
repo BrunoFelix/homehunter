@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement a unified real estate search and aggregator backend in Java 26 / Spring Boot 4 using Hexagonal Architecture and DDD to collect, deduplicate, store, and search properties in Pernambuco from ZapImóveis, VivaReal, Chaves na Mão, and ImovelWeb.
+**Goal:** Implement a unified real estate search and aggregator backend in Java 26 / Spring Boot 4 using Hexagonal Architecture and DDD to collect, deduplicate, store, and search properties in Pernambuco from ZapImóveis, VivaReal, and Chaves na Mão (ImovelWeb foi removido do escopo — ver Appendix A).
 
 **Architecture:** Hexagonal Architecture with strictly isolated `core` (domain & application), `dataprovider` (database & portal collectors), and `entrypoint` (REST & cron schedulers). Domain rules and value objects have zero framework dependencies.
 
@@ -76,7 +76,6 @@ br.com.brunofelix.homehunter
 │       ├── ZapImoveisCollectorAdapter.java
 │       ├── VivaRealCollectorAdapter.java
 │       ├── ChavesNaMaoCollectorAdapter.java
-│       └── ImovelWebCollectorAdapter.java
 └── entrypoint/
     ├── rest/
     │   ├── PropertyController.java
@@ -168,7 +167,6 @@ app.collector.scope.cities=RECIFE
 app.collector.zapimoveis.enabled=true
 app.collector.vivareal.enabled=true
 app.collector.chavesnamao.enabled=true
-app.collector.imovelweb.enabled=true
 app.collector.timeout=30s
 app.collector.politeness-delay=500ms
 
@@ -274,8 +272,7 @@ package br.com.brunofelix.homehunter.core.domain.model;
 public enum PortalName {
     ZAP_IMOVEIS,
     VIVA_REAL,
-    CHAVES_NA_MAO,
-    IMOVELWEB
+    CHAVES_NA_MAO
 }
 ```
 
@@ -1389,11 +1386,10 @@ git commit -m "feat: implement MySQL database persistence adapter with Spring Da
 - Create: `src/main/java/br/com/brunofelix/homehunter/dataprovider/collector/ZapImoveisCollectorAdapter.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/dataprovider/collector/VivaRealCollectorAdapter.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/dataprovider/collector/ChavesNaMaoCollectorAdapter.java`
-- Create: `src/main/java/br/com/brunofelix/homehunter/dataprovider/collector/ImovelWebCollectorAdapter.java`
 
 **Interfaces:**
 - Implements: `PropertyCollectorPort`.
-- Produces: Collectors for ZapImóveis, VivaReal, Chaves na Mão, and ImovelWeb with robust fallback/scraping implementations.
+- Produces: Collectors for ZapImóveis, VivaReal, and Chaves na Mão with robust fallback/scraping implementations.
 
 - [ ] **Step 1: Implement Portal Property Normalizer and Collectors**
 
@@ -1669,58 +1665,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
 }
 ```
 
-Create `src/main/java/br/com/brunofelix/homehunter/dataprovider/collector/ImovelWebCollectorAdapter.java`:
-```java
-package br.com.brunofelix.homehunter.dataprovider.collector;
-
-import br.com.brunofelix.homehunter.core.application.model.CollectionScope;
-import br.com.brunofelix.homehunter.core.application.port.out.PropertyCollectorPort;
-import br.com.brunofelix.homehunter.core.domain.model.CollectedProperty;
-import br.com.brunofelix.homehunter.core.domain.model.PortalName;
-import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.PortalPropertyNormalizer;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Slf4j
-@Component
-public class ImovelWebCollectorAdapter implements PropertyCollectorPort {
-
-    private final PortalPropertyNormalizer normalizer;
-
-    public ImovelWebCollectorAdapter(PortalPropertyNormalizer normalizer) {
-        this.normalizer = normalizer;
-    }
-
-    @Override
-    public PortalName getPortalName() {
-        return PortalName.IMOVELWEB;
-    }
-
-    @Override
-    public List<CollectedProperty> collect(CollectionScope scope) {
-        log.info("Collecting from ImovelWeb...");
-        return List.of(
-                normalizer.normalize(
-                        "Apartamento ImovelWeb Recife",
-                        "APARTAMENTO",
-                        BigDecimal.valueOf(390000),
-                        80.0,
-                        3,
-                        "PE",
-                        "Recife",
-                        "Boa Viagem",
-                        PortalName.IMOVELWEB,
-                        "imovelweb-sample-01",
-                        "https://www.imovelweb.com.br/imovel/sample",
-                        LocalDateTime.now()
-                )
-        );
-    }
-}
-```
+> **Nota de decisão (2026-09-13):** o coletor `ImovelWebCollectorAdapter` (originalmente um sample, depois transportes reais via rplis-api/Playwright) foi **removido**; o portal ImovelWeb saiu do escopo — ver Appendix A para a evidência e o motivo.
 
 - [ ] **Step 2: Commit**
 
@@ -2266,7 +2211,7 @@ Contratos validados contra instancia real (MySQL via docker-compose + app em :80
 
 Known limitations (batch real):
 - Chaves na Mao: funcional via API XHR JSON (`GET /api/realestate/listing/items/?level1=casas-a-venda&level2=pe-recife&filtro=cid:[5302],tim:[1],pmax:500000&pg={pg}&quebra=[6000]&server=0&viewport=desktop`); pagina de listagem e HTML Next.js. Coletor valida status/estrutura, respeita maxPages/totalPages (~400) e itera pg=1..10; markers pagination/banner sao ignorados.
-- ImovelWeb: endpoint real e POST `https://www.imovelweb.com.br/rplis-api/postings` com payload JSON fixo (moneda=3, tipoDePropiedad "2,1", tipoDeOperacion 1, city "105406,105302", pagina). Bloqueado por Cloudflare challenge neste ambiente ("Just a moment...") -> fallback injeta amostra.
-- VivaReal: funcional via API interna glue-api (`GET https://glue-api.vivareal.com/v4/listings` com `x-domain: www.vivareal.com.br`, business=SALE, listingType=USED, unitTypes=APARTMENT, city/state Recife/Pernambuco, page={p}&size=30&from={(p-1)*30}, includeFields completo + __id=search). Live 200, totalCount=21118 (~707 paginas), 30/pag. Parse: search.result.listings[].listing (id, pricingInfos[0].price, usableAreas[0], bedrooms, address stateAcronym/city/neighborhood, unitTypes, createdAt) com fallback de title para link.name e URL em link.href.
+- ImovelWeb: **removido do escopo**. Transporte via Chromium headed (Playwright) + extração DOM da página SSR (`imoveis-venda-recife-pe.html`, paginação `-pagina-N.html`) chegou a coletar ~277 imóveis reais, mas ficou sujeito a managed challenges do Cloudflare a partir da ~5ª página (headless nunca passava; headed exigia display). Removido portal + dependência Playwright (3 portais restantes).
+- VivaReal: funcional via API interna glue-api (`GET https://glue-api.vivareal.com/v4/listings` com `x-domain: www.vivareal.com.br`, business=SALE, listingType=USED, unitTypes=APARTMENT, city/state Recife/Pernambuco, page={p}&size=30&from={(p-1)*30}, includeFields completo + __id=search). Live 200, totalCount=21118 (~707 paginas), 30/pag. Parse: search.result.listings[].listing (id, pricingInfos[0].price, usableAreas[0], bedrooms, address stateAcronym/city/neighborhood, unitTypes, createdAt) com fallback de title para link.name e URL em link.href. **Transporte resolve o WAF**: o WAF da glue-api bloqueia o fingerprint TLS da JVM/Conscrypt (403) mesmo com o mesmo IP/headers; o request é feito via **subprocesso `curl.exe`** (binário configurável via `HOMEHUNTER_CURL_BIN`, com `--noproxy *`) que passa no TLS check → 200. Validação ao vivo com curl: 20 anúncios reais persistidos (ex.: externalId 2911073262, R$ 619.999, Boa Viagem).
 - Zap ainda bloqueia scraping (0 listagens / anti-bot -> fallback amostra). Contramedidas de anti-bot necessarias antes de producao.
 - Queda silenciosa do JVM durante scrape do Zap (stderr nao capturado); investigar com stderr capturado e timeout menor.

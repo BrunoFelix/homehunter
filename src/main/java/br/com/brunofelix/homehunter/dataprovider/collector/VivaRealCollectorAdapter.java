@@ -8,20 +8,25 @@ import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.Portal
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
+@ConditionalOnProperty(name = "app.collector.vivareal.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class VivaRealCollectorAdapter implements PropertyCollectorPort {
 
@@ -34,7 +39,6 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
     private static final String X_DOMAIN = "www.vivareal.com.br";
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
-    private static final int TIMEOUT_MS = 20000;
     private static final DateTimeFormatter VIVAREAL_OFFSET_DATE_TIME =
             DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -82,6 +86,7 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
     private final PortalPropertyNormalizer normalizer;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String apiUrl;
+    private final CurlRunner curlRunner;
 
     @Autowired
     public VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer) {
@@ -89,8 +94,13 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
     }
 
     VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl) {
+        this(normalizer, apiUrl, new SystemCurlRunner());
+    }
+
+    VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner) {
         this.normalizer = normalizer;
         this.apiUrl = apiUrl;
+        this.curlRunner = curlRunner;
     }
 
     @Override
@@ -103,22 +113,14 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
         List<CollectedProperty> results = new ArrayList<>();
         for (int page = 1; page <= MAX_PAGES; page++) {
             try {
-                Connection.Response response = Jsoup.connect(buildUrl(page))
-                        .userAgent(USER_AGENT)
-                        .header("x-domain", X_DOMAIN)
-                        .header("Accept", "application/json")
-                        .timeout(TIMEOUT_MS)
-                        .ignoreContentType(true)
-                        .ignoreHttpErrors(true)
-                        .method(Connection.Method.GET)
-                        .execute();
+                CurlResult result = curlRunner.execute(buildUrl(page));
 
-                if (response.statusCode() != 200) {
-                    log.warn("VivaReal returned HTTP {} on page {}; stopping pagination.", response.statusCode(), page);
+                if (result.statusCode() != 200) {
+                    log.warn("VivaReal returned HTTP {} on page {}; stopping pagination.", result.statusCode(), page);
                     break;
                 }
 
-                String json = new String(response.bodyAsBytes(), StandardCharsets.UTF_8);
+                String json = new String(result.body(), StandardCharsets.UTF_8);
                 JsonNode root = objectMapper.readTree(json);
                 JsonNode items = itemsOf(root);
                 if (items == null) {
@@ -145,7 +147,7 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
                 if (page >= declaredMax) {
                     break;
                 }
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 log.error("VivaReal page {} failed to fetch or parse: {}", page, e.getMessage());
                 break;
             }
@@ -283,5 +285,96 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
                 + "&size=" + PAGE_SIZE
                 + "&from=" + ((page - 1) * PAGE_SIZE)
                 + INCLUDE_FIELDS_SUFFIX;
+    }
+
+    interface CurlRunner {
+        CurlResult execute(String url);
+    }
+
+    record CurlResult(int statusCode, byte[] body) {
+        static CurlResult failure() {
+            return new CurlResult(0, new byte[0]);
+        }
+    }
+
+    static final class SystemCurlRunner implements CurlRunner {
+
+        private final String curlCommand;
+        private final int timeoutSeconds;
+
+        SystemCurlRunner() {
+            this(curlCommandForCurrentOs(), 30);
+        }
+
+        SystemCurlRunner(String curlCommand, int timeoutSeconds) {
+            this.curlCommand = curlCommand;
+            this.timeoutSeconds = timeoutSeconds;
+        }
+
+        private static String curlCommandForCurrentOs() {
+            String configured = System.getenv("HOMEHUNTER_CURL_BIN");
+            if (configured != null && !configured.isBlank()) {
+                return configured;
+            }
+            String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+            return os.contains("win") ? "curl.exe" : "curl";
+        }
+
+        @Override
+        public CurlResult execute(String url) {
+            Path tmp = null;
+            try {
+                tmp = Files.createTempFile("vivareal", ".json");
+                ProcessBuilder pb = new ProcessBuilder(
+                        curlCommand,
+                        "--noproxy", "*",
+                        "-s",
+                        "--max-time", String.valueOf(timeoutSeconds),
+                        "-H", "x-domain: " + X_DOMAIN,
+                        "-H", "User-Agent: " + USER_AGENT,
+                        "-H", "Accept: application/json",
+                        "-o", tmp.toString(),
+                        "-w", "%{http_code}",
+                        url);
+                Process process = pb.redirectErrorStream(true).start();
+                String stdout;
+                try (InputStream is = process.getInputStream()) {
+                    stdout = new String(is.readAllBytes(), StandardCharsets.US_ASCII).trim();
+                }
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    log.warn("VivaReal curl exited {}: {}", exitCode, stdout);
+                    return CurlResult.failure();
+                }
+                int status = parseStatus(stdout);
+                byte[] body = Files.readAllBytes(tmp);
+                return new CurlResult(status, body);
+            } catch (IOException e) {
+                log.warn("VivaReal curl fetch failed: {}", e.getMessage());
+                return CurlResult.failure();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return CurlResult.failure();
+            } finally {
+                if (tmp != null) {
+                    try {
+                        Files.deleteIfExists(tmp);
+                    } catch (IOException ignored) {
+                        // best-effort cleanup
+                    }
+                }
+            }
+        }
+
+        private int parseStatus(String stdout) {
+            if (stdout == null || stdout.isBlank()) {
+                return 0;
+            }
+            try {
+                return Integer.parseInt(stdout.replaceAll("[^0-9]", ""));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
     }
 }

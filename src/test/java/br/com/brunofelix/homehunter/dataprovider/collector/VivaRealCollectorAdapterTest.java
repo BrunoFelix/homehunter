@@ -5,21 +5,12 @@ import br.com.brunofelix.homehunter.core.domain.model.CollectedProperty;
 import br.com.brunofelix.homehunter.core.domain.model.PortalName;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
 import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.PortalPropertyNormalizer;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +21,8 @@ class VivaRealCollectorAdapterTest {
 
     private static final Pattern PAGE_PARAM = Pattern.compile("[?&]page=(\\d+)");
     private static final Pattern FROM_PARAM = Pattern.compile("[?&]from=(\\d+)");
+
+    private static final String API_URL = "https://glue-api.vivareal.com/v4/listings";
 
     private static final String APTO =
             "{\"listing\":{\"id\":\"2909080219\",\"externalId\":\"12035-Lc\",\"title\":null,"
@@ -54,87 +47,17 @@ class VivaRealCollectorAdapterTest {
                     + "\"link\":{\"name\":\"Casa Térrea com 3 quartos\","
                     + "\"href\":\"/imovel/casa-terrea-3-quartos-id-3012345678/\"}}";
 
-    private HttpServer server;
-    private final List<Integer> requestedPages = new ArrayList<>();
-    private Function<Integer, StubResponse> pageHandler;
-
-    @BeforeEach
-    void setUpServer() throws IOException {
-        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/", this::handle);
-        server.setExecutor(Executors.newCachedThreadPool());
-        server.start();
-    }
-
-    private void handle(HttpExchange exchange) throws IOException {
-        String domain = exchange.getRequestHeaders().getFirst("x-domain");
-        assertNotNull(domain, "expected x-domain header");
-        assertEquals("www.vivareal.com.br", domain);
-
-        String query = exchange.getRequestURI().getQuery();
-        assertNotNull(query, "expected query string");
-        assertTrue(query.contains("categoryPage=RESULT"), "expected categoryPage in: " + query);
-        assertTrue(query.contains("business=SALE"), "expected business in: " + query);
-        assertTrue(query.contains("addressCity=Recife"), "expected addressCity in: " + query);
-        assertTrue(query.contains("addressState=Pernambuco"), "expected addressState in: " + query);
-        assertTrue(query.contains("unitTypes=APARTMENT"), "expected unitTypes in: " + query);
-        assertTrue(query.contains("__id=search"), "expected __id in: " + query);
-
-        int page = 1;
-        Matcher pm = PAGE_PARAM.matcher(query);
-        if (pm.find()) {
-            page = Integer.parseInt(pm.group(1));
-        }
-        Matcher fm = FROM_PARAM.matcher(query);
-        assertTrue(fm.find(), "expected from param in: " + query);
-        assertEquals((page - 1) * VivaRealCollectorAdapter.PAGE_SIZE, Integer.parseInt(fm.group(1)));
-        assertTrue(query.contains("size=" + VivaRealCollectorAdapter.PAGE_SIZE), "expected size in: " + query);
-        requestedPages.add(page);
-
-        StubResponse response = pageHandler.apply(page);
-        byte[] bytes = response.body().getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
-        exchange.getResponseHeaders().set("Connection", "close");
-        exchange.sendResponseHeaders(response.status(), bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-            os.flush();
-        }
-        exchange.close();
-    }
-
-    @AfterEach
-    void tearDownServer() {
-        server.stop(0);
-    }
-
-    private VivaRealCollectorAdapter adapter() {
-        return new VivaRealCollectorAdapter(
-                new PortalPropertyNormalizer(), "http://127.0.0.1:" + server.getAddress().getPort() + "/v4/listings");
-    }
-
-    private static String listingPage(int totalCount, String... wrappers) {
-        return "{\"search\":{\"result\":{\"listings\":[" + String.join(",", wrappers) + "]},\"totalCount\":"
-                + totalCount + "},\"page\":{}}";
-    }
-
-    private static String emptyPage() {
-        return listingPage(5340);
-    }
-
-    private record StubResponse(int status, String body) {
-    }
-
     @Test
     void shouldParseRealisticItemsAndStopOnEmptyPage() {
-        pageHandler = pg -> pg == 1
-                ? new StubResponse(200, listingPage(5340, APTO, CASA))
-                : new StubResponse(200, emptyPage());
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
+                ? jsonResult(listingPage(5340, APTO, CASA))
+                : jsonResult(emptyPage()));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(2, results.size());
-        assertEquals(List.of(1, 2), requestedPages);
+        assertEquals(List.of(1, 2), requestPages(urls));
 
         CollectedProperty apto = results.stream()
                 .filter(p -> p.externalId().equals("2909080219"))
@@ -160,15 +83,16 @@ class VivaRealCollectorAdapterTest {
 
     @Test
     void shouldSkipMalformedItems() {
-        pageHandler = pg -> pg == 1
-                ? new StubResponse(200, listingPage(5340,
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
+                ? jsonResult(listingPage(5340,
                         APTO,
                         "{\"listing\":{\"id\":null}}",
                         "{\"listing\":{\"id\":\"1\",\"pricingInfos\":[{\"businessType\":\"SALE\"}]}}",
                         "{\"listing\":{\"id\":\"2\",\"title\":\"Sem preço\"}}"))
-                : new StubResponse(200, emptyPage());
+                : jsonResult(emptyPage()));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
         assertTrue(results.stream().noneMatch(p -> p.externalId().equals("1")));
@@ -177,56 +101,143 @@ class VivaRealCollectorAdapterTest {
 
     @Test
     void shouldInjectSampleWhenHttpForbidden() {
-        pageHandler = pg -> new StubResponse(403, "");
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> new VivaRealCollectorAdapter.CurlResult(403, new byte[0]));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
         assertEquals("viva-sample-01", results.get(0).externalId());
         assertEquals(PortalName.VIVA_REAL, results.get(0).portalName());
-        assertEquals(List.of(1), requestedPages);
+        assertEquals(List.of(1), requestPages(urls));
     }
 
     @Test
     void shouldInjectSampleWhenFirstPageEmpty() {
-        pageHandler = pg -> new StubResponse(200, emptyPage());
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(emptyPage()));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
         assertEquals("viva-sample-01", results.get(0).externalId());
-        assertEquals(List.of(1), requestedPages);
+        assertEquals(List.of(1), requestPages(urls));
     }
 
     @Test
     void shouldRespectDeclaredTotalPages() {
-        pageHandler = pg -> new StubResponse(200, listingPage(30, APTO));
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(30, APTO)));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
-        assertEquals(List.of(1), requestedPages);
+        assertEquals(List.of(1), requestPages(urls));
     }
 
     @Test
     void shouldCapLoopAtMaxPages() {
-        pageHandler = pg -> new StubResponse(200, listingPage(100000, APTO));
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(100000, APTO)));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(VivaRealCollectorAdapter.MAX_PAGES, results.size());
-        assertEquals(10, requestedPages.size());
-        assertFalse(requestedPages.contains(11));
+        assertEquals(10, requestPages(urls).size());
+        assertFalse(requestPages(urls).contains(11));
     }
 
     @Test
     void shouldStopOnUnexpectedResponseStructure() {
-        pageHandler = pg -> new StubResponse(200, "{\"something\":\"else\"}");
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult("{\"something\":\"else\"}"));
 
-        List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
         assertEquals("viva-sample-01", results.get(0).externalId());
-        assertEquals(List.of(1), requestedPages);
+        assertEquals(List.of(1), requestPages(urls));
+    }
+
+    @Test
+    void shouldInjectSampleWhenCurlFails() {
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> VivaRealCollectorAdapter.CurlResult.failure());
+
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+
+        assertEquals(1, results.size());
+        assertEquals("viva-sample-01", results.get(0).externalId());
+    }
+
+    @Test
+    void buildUrlShouldExposeApiContract() {
+        VivaRealCollectorAdapter adapter = new VivaRealCollectorAdapter(
+                new PortalPropertyNormalizer(), API_URL, url -> VivaRealCollectorAdapter.CurlResult.failure());
+
+        for (int page = 1; page <= 3; page++) {
+            String url = adapter.buildUrl(page);
+            assertValidApiUrl(url, page);
+        }
+    }
+
+    private static void assertValidApiUrl(String url, int page) {
+        assertTrue(url.startsWith(API_URL + "?"), "expected base + query in: " + url);
+        assertTrue(url.contains("categoryPage=RESULT"), "expected categoryPage in: " + url);
+        assertTrue(url.contains("business=SALE"), "expected business in: " + url);
+        assertTrue(url.contains("addressCity=Recife"), "expected addressCity in: " + url);
+        assertTrue(url.contains("addressState=Pernambuco"), "expected addressState in: " + url);
+        assertTrue(url.contains("unitTypes=APARTMENT"), "expected unitTypes in: " + url);
+        assertTrue(url.contains("__id=search"), "expected __id in: " + url);
+
+        Matcher pm = PAGE_PARAM.matcher(url);
+        assertTrue(pm.find(), "expected page param in: " + url);
+        assertEquals(page, Integer.parseInt(pm.group(1)));
+
+        Matcher fm = FROM_PARAM.matcher(url);
+        assertTrue(fm.find(), "expected from param in: " + url);
+        assertEquals((page - 1) * VivaRealCollectorAdapter.PAGE_SIZE, Integer.parseInt(fm.group(1)));
+
+        assertTrue(url.contains("size=" + VivaRealCollectorAdapter.PAGE_SIZE), "expected size in: " + url);
+    }
+
+    private static List<Integer> requestPages(List<String> urls) {
+        List<Integer> pages = new ArrayList<>();
+        for (String url : urls) {
+            Matcher pm = PAGE_PARAM.matcher(url);
+            assertTrue(pm.find(), "expected page param in: " + url);
+            pages.add(Integer.parseInt(pm.group(1)));
+        }
+        return pages;
+    }
+
+    private static VivaRealCollectorAdapter adapterWith(List<String> urls, Function<Integer, VivaRealCollectorAdapter.CurlResult> handler) {
+        VivaRealCollectorAdapter.CurlRunner runner = url -> {
+            assertValidApiUrl(url, pageOf(url));
+            urls.add(url);
+            return handler.apply(pageOf(url));
+        };
+        return new VivaRealCollectorAdapter(new PortalPropertyNormalizer(), API_URL, runner);
+    }
+
+    private static int pageOf(String url) {
+        Matcher pm = PAGE_PARAM.matcher(url);
+        if (!pm.find()) {
+            throw new IllegalArgumentException("no page param in: " + url);
+        }
+        return Integer.parseInt(pm.group(1));
+    }
+
+    private static String listingPage(int totalCount, String... wrappers) {
+        return "{\"search\":{\"result\":{\"listings\":[" + String.join(",", wrappers) + "]},\"totalCount\":"
+                + totalCount + "},\"page\":{}}";
+    }
+
+    private static String emptyPage() {
+        return listingPage(5340);
+    }
+
+    private static VivaRealCollectorAdapter.CurlResult jsonResult(String json) {
+        return new VivaRealCollectorAdapter.CurlResult(200, json.getBytes(StandardCharsets.UTF_8));
     }
 }

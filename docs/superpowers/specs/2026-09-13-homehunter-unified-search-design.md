@@ -8,11 +8,10 @@
 
 ## 1. Overview & Objective
 
-HomeHunter is a unified real estate search application that collects, aggregates, deduplicates, filters, and stores property listings (houses and apartments) in **Pernambuco** from four major portals:
+HomeHunter is a unified real estate search application that collects, aggregates, deduplicates, filters, and stores property listings (houses and apartments) in **Pernambuco** from three major portals:
 - ZapImóveis
 - VivaReal
 - Chaves na Mão
-- ImovelWeb
 
 The application follows **Hexagonal Architecture (Ports & Adapters)**, **Domain-Driven Design (DDD)**, and **Clean Code** standards.
 
@@ -56,7 +55,7 @@ br.com.brunofelix.homehunter
 │   │   │   ├── Property.java            #    Aggregate Root (comportamento rico)
 │   │   │   ├── PropertyId.java          #    Value Object (identidade natural determinística)
 │   │   │   ├── PropertyType.java        #    Enum (CASA, APARTAMENTO)
-│   │   │   ├── PortalName.java          #    Enum (ZAP, VIVAREAL, CHAVES_NA_MAO, IMOVELWEB)
+│   │   │   ├── PortalName.java          #    Enum (ZAP, VIVAREAL, CHAVES_NA_MAO)
 │   │   │   ├── Price.java               #    Value Object (moeda BRL + valor)
 │   │   │   ├── Area.java                #    Value Object (m²)
 │   │   │   ├── Bedrooms.java            #    Value Object (quantidade de quartos)
@@ -105,7 +104,6 @@ br.com.brunofelix.homehunter
 │       ├── ZapImoveisCollectorAdapter.java
 │       ├── VivaRealCollectorAdapter.java
 │       ├── ChavesNaMaoCollectorAdapter.java
-│       └── ImovelWebCollectorAdapter.java
 │
 └── entrypoint/                          # ── DRIVING ADAPTERS ──
     ├── rest/
@@ -245,7 +243,7 @@ Ciclo: coleta → deduplica → persiste.
 |---|---|---|
 | `id` | BIGINT | PRIMARY KEY AUTO_INCREMENT |
 | `property_id` | VARCHAR(64) | FOREIGN KEY → `tb_property(id)` |
-| `portal_name` | VARCHAR(50) | NOT NULL (ZAP, VIVAREAL, CHAVES_NA_MAO, IMOVELWEB) |
+| `portal_name` | VARCHAR(50) | NOT NULL (ZAP, VIVAREAL, CHAVES_NA_MAO) |
 | `external_id` | VARCHAR(100) | NOT NULL |
 | `url` | TEXT | NOT NULL |
 | `price` | DECIMAL(12,2) | NOT NULL |
@@ -272,7 +270,6 @@ Ciclo: coleta → deduplica → persiste.
 | `app.collector.zapimoveis.enabled` | `true` | Habilita/desabilita portal |
 | `app.collector.vivareal.enabled` | `true` | idem |
 | `app.collector.chavesnamao.enabled` | `true` | idem |
-| `app.collector.imovelweb.enabled` | `true` | idem |
 | `app.collector.timeout` | `30s` | Timeout HTTP por portal |
 | `app.collector.politeness-delay` | `500ms` | Atraso entre requisições por portal (boas práticas) |
 
@@ -305,7 +302,7 @@ Contratos **validados contra instância real** (MySQL via docker-compose + app e
 
 **Achados / limitações (risco para o batch real):**
 - **Chaves na Mão — agora funcional**: a página de listagem (`https://www.chavesnamao.com.br/casas-a-venda/pe-recife/`) entrega HTML (Next.js SSR); o JSON real vem da **API XHR** `GET /api/realestate/listing/items/?level1=casas-a-venda&level2=pe-recife&filtro=cid:[5302],tim:[1],pmax:500000&pg={pg}&quebra=[6000]&server=0&viewport=desktop` (Recife + Jaboatão, apartamentos e casas, até R$ 600.000). Validação ao vivo: `maxPages`/`totalPages` ~400, `totalListing` ~6000, próxima página = `pg+1`. Cada página contém markers `pagination`/`banner` (sem `id`) que devem ser ignorados. O coletor percorre `pg=1..10`, valida status/estrutura, respeita `maxPages`/`totalPages` declarados e cai em amostra quando a API não responde.
-- **ImovelWeb — endpoint real é POST**: `POST https://www.imovelweb.com.br/rplis-api/postings` com payload JSON fixo (moneda=3 R$, tipoDePropiedad "2,1" apto+casa, tipoDeOperacion=1 venda, city "105406,105302" Recife+Jaboatão, `pagina` por página). Response `listPostings[]` com `pricing` por `currencyId "3"`, áreas CFT100/CFT101, quartos CFT2, tipo por `realEstateTypeId` (1=casa, 2=apartamento), localização via cadeia `postingLocation.location` (ZONA→bairro, CIUDAD→cidade, PROVINCIA→sigla), `modified_date` com offset (`yyyy-MM-dd'T'HH:mm:ssZ`), `paging.totalPages`. **Live bloqueado por Cloudflare challenge** ("Just a moment...") neste ambiente → fallback injeta amostra.
-- **VivaReal — agora funcional**: o scraping HTML é bloqueado, mas a **API interna `glue-api`** responde. `GET https://glue-api.vivareal.com/v4/listings?categoryPage=RESULT&business=SALE&listingType=USED&portal=VIVAREAL&addressCity=Recife&addressState=Pernambuco&unitTypes=APARTMENT&usageTypes=RESIDENTIAL&page={p}&size=30&from={(p-1)*30}&includeFields=...&__id=search` **requer header `x-domain: www.vivareal.com.br`** (sem ele → 400 `MISSING-DOMAIN-HEADER`). Validação ao vivo: **200**, `search.totalCount`=21118 (→707 págs), 30 listagens/pág. Response `search.result.listings[]` com wrapper `{listing, account, medias, link}`; campos: `listing.id`, `pricingInfos[].price` (businessType=SALE), `usableAreas[]`/`totalAreas[]` (array; 1º valor, pode ser string), `bedrooms`, `address.{state,stateAcronym,city,neighborhood}`, `unitTypes` (APARTMENT/HOUSE), `listing.createdAt` (ISO-8601 com offset `+00:00`), `title` **frequentemente null** (fallback para `link.name`), URL em `link.href` (relativa → prefixo `https://www.vivareal.com.br`). O coletor percorre `page=1..10` com `from=(page-1)*30`, respeita `ceil(totalCount/30)` e cai em amostra quando a API não responde.
+- **ImovelWeb — removido do escopo**: um transporte via **Chromium headed (Playwright) + extração via DOM** da página SSR de busca (`imoveis-venda-recife-pe.html`, paginação `-pagina-N.html`) foi implementado e chegou a coletar ~277 imóveis reais em Recife; porém ficou suscetível a **managed challenges do Cloudflare a partir da ~5ª página** (só o modo headed passava o challenge; headless falhava sempre) e exigia navegador com display (inviável em produção sem xvfb). Decisão: remover o portal e toda a dependência de Playwright do stack (3 portais).
+- **VivaReal — agora funcional**: o scraping HTML é bloqueado, mas a **API interna `glue-api`** responde. `GET https://glue-api.vivareal.com/v4/listings?categoryPage=RESULT&business=SALE&listingType=USED&portal=VIVAREAL&addressCity=Recife&addressState=Pernambuco&unitTypes=APARTMENT&usageTypes=RESIDENTIAL&page={p}&size=30&from={(p-1)*30}&includeFields=...&__id=search` **requer header `x-domain: www.vivareal.com.br`** (sem ele → 400 `MISSING-DOMAIN-HEADER`). Validação ao vivo: **200**, `search.totalCount`=21118 (→707 págs), 30 listagens/pág. Response `search.result.listings[]` com wrapper `{listing, account, medias, link}`; campos: `listing.id`, `pricingInfos[].price` (businessType=SALE), `usableAreas[]`/`totalAreas[]` (array; 1º valor, pode ser string), `bedrooms`, `address.{state,stateAcronym,city,neighborhood}`, `unitTypes` (APARTMENT/HOUSE), `listing.createdAt` (ISO-8601 com offset `+00:00`), `title` **frequentemente null** (fallback para `link.name`), URL em `link.href` (relativa → prefixo `https://www.vivareal.com.br`). O coletor percorre `page=1..10` com `from=(page-1)*30`, respeita `ceil(totalCount/30)` e cai em amostra quando a API não responde. **Transporte anti-WAF**: o WAF da glue-api bloqueia o fingerprint TLS (JA3/JA4) da JVM/Conscrypt (403 mesmo com mesmo IP/headers); o request é executado por **subprocesso `curl.exe`** (binário configurável via `HOMEHUNTER_CURL_BIN`, `--noproxy *`), que passa no TLS check → 200. Validado ao vivo: 20 anúncios reais persistidos (ex.: externalId `2911073262`, R$ 619.999, Boa Viagem).
 - **Zap — ainda bloqueado**: retornou **0 listagens** ("anti-bot engaged") → fallback com dados de amostra. Necessário contra-medidas (User-Agent real, headers/JS rendering, proxy/rotacionamento) antes de produção.
 - **Queda silenciosa do JVM**: durante scrape do Zap (após ~40s de sync) o processo encerrou sem exceção no log (stderr não capturado no teste). Hipótese principal: stall de rede no fetch do portal; investigar com stderr capturado e timeout menor.

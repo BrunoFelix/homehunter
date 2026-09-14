@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@ConditionalOnProperty(name = "app.collector.chavesnamao.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
 
