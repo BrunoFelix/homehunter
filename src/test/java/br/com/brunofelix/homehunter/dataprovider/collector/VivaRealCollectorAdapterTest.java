@@ -29,7 +29,7 @@ class VivaRealCollectorAdapterTest {
                     + "\"description\":\"Apartamento com 2 quartos em Recife\",\"status\":\"ACTIVE\","
                     + "\"createdAt\":\"2026-09-10T19:30:31.897+00:00\","
                     + "\"unitTypes\":[\"APARTMENT\"],\"propertyType\":\"UNIT\","
-                    + "\"bedrooms\":2,\"parkingSpaces\":1,\"usableAreas\":[55,45],\"totalAreas\":[55,45],"
+                    + "\"bedrooms\":[2],\"parkingSpaces\":[1],\"usableAreas\":[55,45],\"totalAreas\":[55,45],"
                     + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":299000,\"yearlyIptu\":0,\"monthlyCondoFee\":0}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\","
                     + "\"neighborhood\":\"Imbiribeira\",\"locationId\":\"BR>Pernambuco>NULL>Recife>Barrios>Imbiribeira\"}},"
@@ -39,9 +39,9 @@ class VivaRealCollectorAdapterTest {
 
     private static final String CASA =
             "{\"listing\":{\"id\":\"3012345678\",\"title\":\"Casa Térrea à venda em Recife\","
-                    + "\"createdAt\":\"2026-09-12T09:30:00-03:00\","
+                    + "\"createdAt\":\"2026-09-12T09:30:00Z\","
                     + "\"unitTypes\":[\"HOUSE\"],\"propertyType\":\"UNIT\","
-                    + "\"bedrooms\":3,\"usableAreas\":[\"100\"],\"totalAreas\":[\"120\"],"
+                    + "\"bedrooms\":[3],\"usableAreas\":[\"100\"],\"totalAreas\":[\"120\"],"
                     + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":520000}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\",\"neighborhood\":null}},"
                     + "\"link\":{\"name\":\"Casa Térrea com 3 quartos\","
@@ -78,7 +78,9 @@ class VivaRealCollectorAdapterTest {
                 .findFirst().orElseThrow();
         assertEquals(PropertyType.CASA, casa.type());
         assertEquals(100.0, casa.area().value());
+        assertEquals(3, casa.bedrooms().value());
         assertEquals("CENTRO", casa.address().neighborhood());
+        assertEquals(LocalDateTime.parse("2026-09-12T09:30:00"), casa.announcedAt());
     }
 
     @Test

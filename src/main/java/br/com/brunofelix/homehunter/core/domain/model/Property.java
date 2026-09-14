@@ -80,7 +80,25 @@ public class Property {
         this.bedrooms = collected.bedrooms();
         this.address = collected.address();
 
-        PropertySource newSource = new PropertySource(
+        for (int i = 0; i < sources.size(); i++) {
+            PropertySource source = sources.get(i);
+            if (source.portalName().equals(collected.portalName()) && source.externalId().equals(collected.externalId())) {
+                sources.set(i, new PropertySource(
+                        source.id(),
+                        collected.portalName(),
+                        collected.externalId(),
+                        collected.url(),
+                        collected.price(),
+                        collected.announcedAt(),
+                        now
+                ));
+                recalculateConsolidatedPrice();
+                this.updatedAt = now;
+                return;
+            }
+        }
+
+        sources.add(new PropertySource(
                 null,
                 collected.portalName(),
                 collected.externalId(),
@@ -88,10 +106,7 @@ public class Property {
                 collected.price(),
                 collected.announcedAt(),
                 now
-        );
-
-        sources.removeIf(s -> s.portalName().equals(collected.portalName()) && s.externalId().equals(collected.externalId()));
-        sources.add(newSource);
+        ));
 
         recalculateConsolidatedPrice();
         this.updatedAt = now;

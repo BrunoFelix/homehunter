@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 class SyncPropertiesUseCaseImplTest {
 
@@ -49,20 +50,61 @@ class SyncPropertiesUseCaseImplTest {
     @Test
     void shouldEnqueueSyncSuccessfully() throws InterruptedException {
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
-        when(repositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repositoryPort.findBySource(any(), any())).thenReturn(Optional.empty());
+        when(repositoryPort.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         SyncStatus status = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
         assertEquals(SyncStatus.ENQUEUED, status);
 
         Thread.sleep(500);
         verify(collectorPort, times(1)).collect(any());
-        verify(repositoryPort, times(1)).save(any());
+        verify(repositoryPort, times(1)).saveAll(any());
+    }
+
+    @Test
+    void shouldMergeIntoPropertyFoundBySourceWhenFingerprintMisses() throws InterruptedException {
+        Property existing = new Property(
+                new PropertyId("old-fingerprint"),
+                "Apartamento Exemplo",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(200000)),
+                new Area(60.0),
+                new Bedrooms(2),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                List.of(new PropertySource(
+                        42L,
+                        PortalName.ZAP_IMOVEIS,
+                        "ext-1",
+                        "https://zap.com/1",
+                        new Price(BigDecimal.valueOf(200000)),
+                        LocalDateTime.now(),
+                        LocalDateTime.now()
+                )),
+                LocalDateTime.now(),
+                LocalDateTime.now()
+        );
+        when(repositoryPort.findById(any())).thenReturn(Optional.empty());
+        when(repositoryPort.findBySource(PortalName.ZAP_IMOVEIS, "ext-1")).thenReturn(Optional.of(existing));
+        when(repositoryPort.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SyncStatus status = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
+        assertEquals(SyncStatus.ENQUEUED, status);
+
+        Thread.sleep(500);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Property>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repositoryPort).saveAll(captor.capture());
+        List<Property> saved = captor.getValue();
+        assertEquals(1, saved.size());
+        assertEquals("old-fingerprint", saved.get(0).getId().value());
+        assertEquals(42L, saved.get(0).getSources().get(0).id());
     }
 
     @Test
     void shouldRejectSyncWhenAlreadyRunning() {
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
-        when(repositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repositoryPort.findBySource(any(), any())).thenReturn(Optional.empty());
+        when(repositoryPort.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         SyncStatus first = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
         SyncStatus second = syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));

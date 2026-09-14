@@ -5,6 +5,7 @@ import br.com.brunofelix.homehunter.core.application.port.out.PropertyRepository
 import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.model.PropertySearchCriteria;
+import br.com.brunofelix.homehunter.core.domain.model.PortalName;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
 import br.com.brunofelix.homehunter.dataprovider.database.mapper.PropertyDatabaseMapper;
 import br.com.brunofelix.homehunter.dataprovider.database.repository.SpringDataPropertyRepository;
@@ -35,6 +36,12 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Transactional(readOnly = true)
     public Optional<Property> findById(PropertyId id) {
         return repository.findById(id.value()).map(mapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Property> findBySource(PortalName portalName, String externalId) {
+        return repository.findBySource(portalName.name(), externalId).map(mapper::toDomain);
     }
 
     @Override
@@ -86,5 +93,15 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
         PropertyEntity entity = mapper.toEntity(property);
         PropertyEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
+    }
+
+    @Override
+    @Transactional
+    public List<Property> saveAll(List<Property> properties) {
+        return properties.stream()
+                .map(mapper::toEntity)
+                .map(repository::save)
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 }

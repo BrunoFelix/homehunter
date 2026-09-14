@@ -124,7 +124,7 @@ class ChavesNaMaoCollectorAdapterTest {
         assertEquals("PE", apto.address().state());
         assertEquals("RECIFE", apto.address().city());
         assertEquals("MADALENA", apto.address().neighborhood());
-        assertEquals(LocalDateTime.parse("2026-07-22T10:11:11"), apto.announcedAt());
+        assertEquals(LocalDateTime.parse("2026-07-22T13:11:11"), apto.announcedAt());
         assertTrue(apto.url().startsWith("http://127.0.0.1:"));
 
         CollectedProperty casa = results.stream()
@@ -133,6 +133,7 @@ class ChavesNaMaoCollectorAdapterTest {
         assertEquals(PropertyType.CASA, casa.type());
         assertEquals(110.0, casa.area().value());
         assertEquals("PINA", casa.address().neighborhood());
+        assertEquals(LocalDateTime.parse("2026-07-20T11:00:00"), casa.announcedAt());
     }
 
     @Test

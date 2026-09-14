@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -34,6 +37,8 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     static final String FIXED_PARAMS_AFTER_PAGE = "quebra=%5B6000%5D&server=0&viewport=desktop";
     static final int MAX_PAGES = 10;
     static final String SAMPLE_EXTERNAL_ID = "chaves-sample-01";
+
+    private static final ZoneId BRAZIL_ZONE = ZoneId.of("America/Recife");
 
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -128,7 +133,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                     PortalName.CHAVES_NA_MAO,
                     SAMPLE_EXTERNAL_ID,
                     baseUrl + "/imovel/sample",
-                    LocalDateTime.now()
+                    LocalDateTime.now(ZoneOffset.UTC)
             ));
         }
 
@@ -192,17 +197,22 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
 
     private LocalDateTime parseDate(String raw) {
         if (raw == null || raw.isBlank()) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
         try {
-            return LocalDateTime.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return LocalDateTime.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    .atZone(BRAZIL_ZONE)
+                    .withZoneSameInstant(ZoneOffset.UTC)
+                    .toLocalDateTime();
         } catch (DateTimeParseException ignored) {
             // try offset form below
         }
         try {
-            return LocalDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return OffsetDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                    .withOffsetSameInstant(ZoneOffset.UTC)
+                    .toLocalDateTime();
         } catch (DateTimeParseException ignored) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
     }
 

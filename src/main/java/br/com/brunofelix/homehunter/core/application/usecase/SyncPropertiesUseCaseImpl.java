@@ -10,6 +10,7 @@ import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.service.PropertyDeduplicationService;
 import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +53,8 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
                                     .collect(Collectors.toList());
                             log.info("Applied pre-storage filter: {} properties kept from {}", collectedList.size(), collector.getPortalName());
                         }
+
+                        List<Property> consolidatedList = new ArrayList<>();
                         for (CollectedProperty collected : collectedList) {
                             try {
                                 PropertyId tempId = PropertyId.generate(
@@ -62,13 +65,17 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
                                         collected.area().value(),
                                         collected.bedrooms().value()
                                 );
-                                Optional<Property> existing = repositoryPort.findById(tempId);
-                                Property consolidated = deduplicationService.deduplicate(existing, collected);
-                                repositoryPort.save(consolidated);
+                                Optional<Property> existing = repositoryPort
+                                        .findBySource(collected.portalName(), collected.externalId())
+                                        .or(() -> repositoryPort.findById(tempId));
+                                consolidatedList.add(deduplicationService.deduplicate(existing, collected));
                             } catch (Exception e) {
                                 log.error("Failed to process collected property from {}: {}", collector.getPortalName(), e.getMessage(), e);
                             }
                         }
+
+                        repositoryPort.saveAll(consolidatedList);
+                        log.info("Committed {} properties from {}", consolidatedList.size(), collector.getPortalName());
                     } catch (Exception e) {
                         log.error("Portal collector failed for {}: {}", collector.getPortalName(), e.getMessage(), e);
                     }

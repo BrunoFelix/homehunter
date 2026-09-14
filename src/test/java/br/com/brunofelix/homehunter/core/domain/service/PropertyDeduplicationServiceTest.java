@@ -4,6 +4,7 @@ import br.com.brunofelix.homehunter.core.domain.model.*;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -105,5 +106,49 @@ class PropertyDeduplicationServiceTest {
 
         assertEquals(1, merged.getSources().size());
         assertEquals("https://zap.com/123-v2", merged.getSources().get(0).url());
+    }
+
+    @Test
+    void shouldPreserveSourceIdWhenMergingSamePortalAndExternalId() {
+        LocalDateTime now = LocalDateTime.now();
+        PropertySource persistedSource = new PropertySource(
+                42L,
+                PortalName.ZAP_IMOVEIS,
+                "zap-sample-01",
+                "https://zap.com/sample",
+                new Price(BigDecimal.valueOf(410000)),
+                now.minusDays(1),
+                now.minusDays(1)
+        );
+        Property existing = new Property(
+                PropertyId.generate("PE", "Recife", "Boa Viagem", PropertyType.APARTAMENTO, 80.0, 3),
+                "Apartamento Exemplo",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(410000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                List.of(persistedSource),
+                now.minusDays(1),
+                now.minusDays(1)
+        );
+
+        CollectedProperty reCollected = new CollectedProperty(
+                "Apartamento Exemplo",
+                PropertyType.APARTAMENTO,
+                new Price(BigDecimal.valueOf(415000)),
+                new Area(80.0),
+                new Bedrooms(3),
+                new Address("PE", "Recife", "Boa Viagem", null),
+                PortalName.ZAP_IMOVEIS,
+                "zap-sample-01",
+                "https://zap.com/sample",
+                now
+        );
+
+        Property merged = service.deduplicate(Optional.of(existing), reCollected);
+
+        assertEquals(1, merged.getSources().size());
+        assertEquals(42L, merged.getSources().get(0).id());
     }
 }

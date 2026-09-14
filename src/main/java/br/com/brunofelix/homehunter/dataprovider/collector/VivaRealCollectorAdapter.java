@@ -19,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -167,7 +169,7 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
                     PortalName.VIVA_REAL,
                     SAMPLE_EXTERNAL_ID,
                     WEB_BASE + "/imovel/sample",
-                    LocalDateTime.now()
+                    LocalDateTime.now(ZoneOffset.UTC)
             ));
         }
 
@@ -198,10 +200,7 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
         }
 
         Double area = parseArea(listing);
-        Integer bedrooms = listing.path("bedrooms").asInt(0);
-        if (bedrooms <= 0) {
-            bedrooms = null;
-        }
+        Integer bedrooms = parseBedrooms(listing);
         String rawType = hasUnitType(listing, "HOUSE") ? "casa" : "apartamento";
         JsonNode address = listing.path("address");
         String state = address.path("stateAcronym").asText(null);
@@ -259,18 +258,34 @@ public class VivaRealCollectorAdapter implements PropertyCollectorPort {
         return areas.get(0).asDouble(0.0);
     }
 
+    private Integer parseBedrooms(JsonNode listing) {
+        JsonNode bedrooms = listing.path("bedrooms");
+        int value;
+        if (bedrooms.isArray()) {
+            if (bedrooms.isEmpty()) {
+                return null;
+            }
+            value = bedrooms.get(0).asInt(0);
+        } else {
+            value = bedrooms.asInt(0);
+        }
+        return value > 0 ? value : null;
+    }
+
     private String absoluteUrl(String partialUrl) {
         return partialUrl.startsWith("http") ? partialUrl : WEB_BASE + partialUrl;
     }
 
     private LocalDateTime parseDate(String raw) {
         if (raw == null || raw.isBlank()) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
         try {
-            return LocalDateTime.parse(raw, VIVAREAL_OFFSET_DATE_TIME);
+            return OffsetDateTime.parse(raw, VIVAREAL_OFFSET_DATE_TIME)
+                    .withOffsetSameInstant(ZoneOffset.UTC)
+                    .toLocalDateTime();
         } catch (DateTimeParseException ignored) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
     }
 
