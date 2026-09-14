@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +37,6 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     static final String FIXED_PARAMS_BEFORE_PAGE =
             "level1=casas-a-venda&level2=pe-recife&filtro=cid%3A%5B5302%5D%2Ctim%3A%5B1%5D%2Cpmax%3A500000";
     static final String FIXED_PARAMS_AFTER_PAGE = "quebra=%5B6000%5D&server=0&viewport=desktop";
-    static final int MAX_PAGES = 10;
     static final String SAMPLE_EXTERNAL_ID = "chaves-sample-01";
 
     private static final ZoneId BRAZIL_ZONE = ZoneId.of("America/Recife");
@@ -49,16 +49,22 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String baseUrl;
     private final String listingPath;
+    private final int maxPages;
 
     @Autowired
-    public ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer) {
-        this(normalizer, DEFAULT_BASE_URL, DEFAULT_LISTING_PATH);
+    public ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, @Value("${app.collector.max-pages:0}") int maxPages) {
+        this(normalizer, DEFAULT_BASE_URL, DEFAULT_LISTING_PATH, maxPages);
     }
 
     ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, String baseUrl, String listingPath) {
+        this(normalizer, baseUrl, listingPath, 0);
+    }
+
+    ChavesNaMaoCollectorAdapter(PortalPropertyNormalizer normalizer, String baseUrl, String listingPath, int maxPages) {
         this.normalizer = normalizer;
         this.baseUrl = baseUrl;
         this.listingPath = listingPath;
+        this.maxPages = maxPages;
     }
 
     @Override
@@ -73,7 +79,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
         List<CollectedProperty> results = new ArrayList<>();
-        for (int page = 1; page <= MAX_PAGES; page++) {
+        for (int page = 1; ; page++) {
             String targetUrl = buildUrl(page);
             try {
                 Connection.Response response = Jsoup.connect(targetUrl)
@@ -112,6 +118,11 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 }
                 int declaredMax = declaredMaxPages(root);
                 if (declaredMax > 0 && page >= declaredMax) {
+                    log.debug("Chaves na Mão fully collected after {} page(s).", page);
+                    break;
+                }
+                if (maxPages > 0 && page >= maxPages) {
+                    log.warn("Chaves na Mão reached configured max-pages cap of {}; stopping pagination.", maxPages);
                     break;
                 }
             } catch (IOException e) {
@@ -121,7 +132,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         }
 
         if (results.isEmpty()) {
-            log.info("Chaves na Mão returned 0 live listings across {} page(s). Injecting sample listing for robustness.", MAX_PAGES);
+            log.info("Chaves na Mão returned 0 live listings. Injecting sample listing for robustness.");
             results.add(normalizer.normalize(
                     "Apartamento Exemplo Chaves na Mão",
                     "APARTAMENTO",

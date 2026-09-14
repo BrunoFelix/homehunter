@@ -3,6 +3,7 @@ package br.com.brunofelix.homehunter.dataprovider.collector;
 import br.com.brunofelix.homehunter.core.domain.model.PortalName;
 import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.PortalPropertyNormalizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -84,11 +85,15 @@ static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings
     );
 
     @Autowired
-    public VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer) {
-        super(normalizer, DEFAULT_API_URL, VIVA_CONFIG);
+    public VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, @Value("${app.collector.max-pages:0}") int maxPages) {
+        super(normalizer, DEFAULT_API_URL, VIVA_CONFIG, maxPages);
     }
 
     VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner) {
-        super(normalizer, apiUrl, curlRunner, VIVA_CONFIG);
+        this(normalizer, apiUrl, curlRunner, 0);
+    }
+
+    VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages) {
+        super(normalizer, apiUrl, curlRunner, VIVA_CONFIG, maxPages);
     }
 }

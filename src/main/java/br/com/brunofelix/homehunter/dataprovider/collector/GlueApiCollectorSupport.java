@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
 
-    public static final int MAX_PAGES = 10;
     public static final int PAGE_SIZE = 30;
 
     public record PortalConfig(
@@ -49,16 +48,18 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     private final String apiUrl;
     private final CurlRunner curlRunner;
     private final PortalConfig config;
+    private final int maxPages;
 
-    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, PortalConfig config) {
+    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, PortalConfig config, int maxPages) {
         this.normalizer = normalizer;
         this.apiUrl = apiUrl;
         this.curlRunner = curlRunner;
         this.config = config;
+        this.maxPages = maxPages;
     }
 
-    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, PortalConfig config) {
-        this(normalizer, apiUrl, new SystemCurlRunner(config.portalLabel(), config.xDomain(), config.tempFilePrefix()), config);
+    protected GlueApiCollectorSupport(PortalPropertyNormalizer normalizer, String apiUrl, PortalConfig config, int maxPages) {
+        this(normalizer, apiUrl, new SystemCurlRunner(config.portalLabel(), config.xDomain(), config.tempFilePrefix()), config, maxPages);
     }
 
     @Override
@@ -69,7 +70,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
         List<CollectedProperty> results = new ArrayList<>();
-        for (int page = 1; page <= MAX_PAGES; page++) {
+        for (int page = 1; ; page++) {
             try {
                 CurlResult result = curlRunner.execute(buildUrl(page));
 
@@ -102,7 +103,12 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                     break;
                 }
                 int declaredMax = declaredTotalPages(root);
-                if (page >= declaredMax) {
+                if (declaredMax > 0 && page >= declaredMax) {
+                    log.debug("{} fully collected after {} page(s).", config.portalLabel(), page);
+                    break;
+                }
+                if (maxPages > 0 && page >= maxPages) {
+                    log.warn("{} reached configured max-pages cap of {}; stopping pagination.", config.portalLabel(), maxPages);
                     break;
                 }
             } catch (IOException | RuntimeException e) {
@@ -112,7 +118,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         }
 
         if (results.isEmpty()) {
-            log.info("{} returned 0 live listings across {} page(s). Injecting sample listing for robustness.", config.portalLabel(), MAX_PAGES);
+            log.info("{} returned 0 live listings. Injecting sample listing for robustness.", config.portalLabel());
             results.add(normalizer.normalize(
                     config.sampleTitle(),
                     "APARTAMENTO",

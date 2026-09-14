@@ -82,8 +82,12 @@ class ChavesNaMaoCollectorAdapterTest {
     }
 
     private ChavesNaMaoCollectorAdapter adapter() {
+        return adapter(0);
+    }
+
+    private ChavesNaMaoCollectorAdapter adapter(int maxPages) {
         String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
-        return new ChavesNaMaoCollectorAdapter(new PortalPropertyNormalizer(), baseUrl, "/");
+        return new ChavesNaMaoCollectorAdapter(new PortalPropertyNormalizer(), baseUrl, "/", maxPages);
     }
 
     private static String listingPage(int declaredMaxPages, String... items) {
@@ -189,14 +193,23 @@ class ChavesNaMaoCollectorAdapterTest {
     }
 
     @Test
-    void shouldCapLoopAtMaxPages() {
+    void shouldCapLoopAtConfiguredMaxPages() {
         pageHandler = pg -> new StubResponse(200, listingPage(1000, REALISTIC_APTO));
+
+        List<CollectedProperty> results = adapter(3).collect(new CollectionScope("PE", List.of("RECIFE"), null));
+
+        assertEquals(3, results.size());
+        assertEquals(List.of(1, 2, 3), requestedPages);
+    }
+
+    @Test
+    void shouldPaginateUntilDeclaredTotalPages() {
+        pageHandler = pg -> new StubResponse(200, listingPage(3, REALISTIC_APTO));
 
         List<CollectedProperty> results = adapter().collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
-        assertEquals(ChavesNaMaoCollectorAdapter.MAX_PAGES, results.size());
-        assertEquals(10, requestedPages.size());
-        assertFalse(requestedPages.contains(11));
+        assertEquals(3, results.size());
+        assertEquals(List.of(1, 2, 3), requestedPages);
     }
 
     @Test

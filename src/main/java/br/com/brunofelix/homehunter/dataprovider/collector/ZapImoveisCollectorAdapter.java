@@ -3,6 +3,7 @@ package br.com.brunofelix.homehunter.dataprovider.collector;
 import br.com.brunofelix.homehunter.core.domain.model.PortalName;
 import br.com.brunofelix.homehunter.dataprovider.collector.anticorruption.PortalPropertyNormalizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -72,11 +73,15 @@ static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/lis
     );
 
     @Autowired
-    public ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer) {
-        super(normalizer, DEFAULT_API_URL, ZAP_CONFIG);
+    public ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, @Value("${app.collector.max-pages:0}") int maxPages) {
+        super(normalizer, DEFAULT_API_URL, ZAP_CONFIG, maxPages);
     }
 
     ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner) {
-        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG);
+        this(normalizer, apiUrl, curlRunner, 0);
+    }
+
+    ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages) {
+        super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages);
     }
 }

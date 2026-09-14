@@ -110,15 +110,29 @@ class ZapImoveisCollectorAdapterTest {
     }
 
     @Test
-    void shouldCapLoopAtMaxPages() {
+    void shouldCapLoopAtConfiguredMaxPages() {
         List<String> urls = new ArrayList<>();
-        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(100000, APTO)));
+        ZapImoveisCollectorAdapter adapter = new ZapImoveisCollectorAdapter(
+                new PortalPropertyNormalizer(), API_URL, url -> {
+                    urls.add(url);
+                    return jsonResult(listingPage(100000, APTO));
+                }, 3);
 
         List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
-        assertEquals(GlueApiCollectorSupport.MAX_PAGES, results.size());
-        assertEquals(10, requestPages(urls).size());
-        assertFalse(requestPages(urls).contains(11));
+        assertEquals(3, results.size());
+        assertEquals(List.of(1, 2, 3), requestPages(urls));
+    }
+
+    @Test
+    void shouldPaginateUntilDeclaredTotalPages() {
+        List<String> urls = new ArrayList<>();
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(90, APTO)));
+
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+
+        assertEquals(3, results.size());
+        assertEquals(List.of(1, 2, 3), requestPages(urls));
     }
 
     @Test
