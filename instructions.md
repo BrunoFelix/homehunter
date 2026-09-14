@@ -1,12 +1,12 @@
 # HomeHunter — Instruções do Projeto
 
-Backend de busca unificada de imóveis (Pernambuco) que coleta, consolida, deduplica e expõe anúncios de 4 portais (ZapImóveis, VivaReal, Chaves na Mão, ImovelWeb).
+Backend de busca unificada de imóveis (Pernambuco) que coleta, consolida, deduplica e expõe anúncios de 3 portais (ZapImóveis, VivaReal, Chaves na Mão).
 
 ## Stack
 
 - Java 26 (toolchain) / Gradle 9 (wrapper `gradlew.bat`)
 - Spring Boot 4.1.1 (Web, Data JPA, Validation)
-- Springdoc OpenAPI 2.8.5, JSoup 1.18.3, Lombok
+- Springdoc OpenAPI 2.8.5, JSoup 1.18.3, Lombok, Testcontainers
 - MySQL 8 (via `docker-compose.yaml`), H2 em testes e fallback local
 - JUnit 5 + Mockito
 
@@ -47,15 +47,35 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 ## Arquitetura (Hexagonal + DDD)
 
 - `core/domain` — agregados e Value Objects (Property, PropertyId, Price, Address...), zero dependências de framework.
-- `core/application` — casos de uso (`SyncPropertiesUseCase`, `SearchPropertiesUseCase`), models neutros (`PagedResult`, `CollectionScope`, `SyncStatus`) e ports (`*InputPort`/`*OutputPort`).
-- `dataprovider` — adapters dirigidos: `database` (JPA + Specification) e `collector` (JSoup + Anti-Corruption Layer `PortalPropertyParser`/`PortalPropertyNormalizer`).
+- `core/application` — casos de uso (`SyncPropertiesUseCase`, `SearchPropertiesUseCase`, `GetPropertyUseCase`), models neutros (`PagedResult`, `CollectionScope`, `SyncStatus`) e ports (`*InputPort`/`*OutputPort`).
+- `dataprovider` — adapters dirigidos: `database` (JPA + Specification) e `collector` (`GlueApiCollectorSupport` + `SystemCurlRunner` para Zap/VivaReal, JSoup para Chaves na Mão + Anti-Corruption Layer `PortalPropertyNormalizer`).
 - `entrypoint` — adaptadores dirigentes: `rest` (PropertyController + DTOs + mappers) e `cron` (PropertySyncScheduler).
 
-Regra de dependência: dependências apontam sempre para dentro. Nada de Spring no `core`. Montagem de beans no Composition Root.
+Regra de dependência: dependências apontam sempre para dentro. Nada de Spring no `core`. Montagem de beans no Composition Root (`CoreBeanConfiguration`, incl. `ExecutorService syncExecutor` com `destroyMethod="shutdown"`).
 
-## Identidade e deduplicação
+## Coleta
 
-- `PropertyId` = SHA-256 determinístico de `STATE|CITY|NEIGHBORHOOD|TYPE|AREA|BEDROOMS` — PK no MySQL. Recolete o mesmo imóvel em outro portal e o agregador funde fontes (`tb_property_source`), sem duplicar `tb_property`.
+- **Paginação completa**: os collectors percorrem todas as páginas até o total declarado pela API (`search.totalCount` / `metadata.totalPages`) — não há mais cap fixo de 10 páginas. Ex.: PE/Recife no ZapImóveis ≈ 244 páginas × 30 itens (~7300 anúncios).
+- Cada página loga em `info`: `loading page X/Y...` (a 1ª ainda sem total conhecido). Extras: HTTP não-200, estrutura inesperada e cap configurado logam `warn`.
+- `app.collector.max-pages` (default `0`) = teto de segurança opcional; `>0` limita a coleta.
+- Escopo geográfico (`CollectionScope` state/cities) é honrado pós-coleta via `CollectionScopeFilter` em **todos** os collectors.
+- Fallback de amostra (1 imóvel) **somente** quando a coleta retorna 0 listagens ao vivo (anti-bot).
+
+## Configuração dos collectors (`application.properties`)
+
+| Propriedade | Default |
+|---|---|
+| `app.collector.zapimoveis.enabled` / `vivareal.enabled` / `chavesnamao.enabled` | `true` |
+| `app.collector.max-pages` | `0` (coleta tudo) |
+| `app.collector.scope.cities` | `RECIFE` |
+| `app.collector.cron` | `0 0 3 * * *` |
+| `app.collector.timeout` / `politeness-delay` | `30s` / `500ms` |
+
+## Identidade, deduplicação e normalização
+
+- `PropertyId` = SHA-256 determinístico de `STATE|CITY|NEIGHBORHOOD|TYPE|AREA|BEDROOMS` — PK no MySQL. Recoleto o mesmo imóvel em outro portal e o agregador funde fontes (`tb_property_source`), sem duplicar `tb_property`.
+- `announced_at` normalizado para **UTC** e truncado à precisão de segundos no `PropertyDatabaseMapper` (consistência entre portais).
+- Preço tratado como **dinheiro** (`BigDecimal`), nunca `double` (`parsePrice` com guarda de `NumberFormatException`).
 - Single-flight: só uma sincronização por vez (409 se já estiver rodando).
 
 ## API (base `/api/v1/properties`)
@@ -68,16 +88,16 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 
 Swagger UI: `/swagger-ui.html` · OpenAPI JSON: `/api-docs`.
 
-## Notas de testes
-
-- Perfil de teste usa H2 (`src/test/resources/application.properties`).
-- `PropertyControllerIntegrationTest` usa **standalone MockMvc** (mock de ports), pois o `spring-boot-test-autoconfigure` do Boot 4.x não expõe mais `@AutoConfigureMockMvc`.
-- Validar endpoints de verdade: subir a app e usar `curl`/terminal. Cuidado com proxy: `curl.exe --noproxy "*" http://127.0.0.1:8080/...`.
-
 ## Limitações conhecidas
 
-- **Scraping dos portais é bloqueado por anti-bot** (Zap/VivaReal/Chaves na Mão retornam 0 listagens; ImovelWeb responde 403). Os collectors caem em dados de amostra. Para produção: contramedidas anti-bot (User-Agent real, JS rendering, proxy).
+- **Scraping de portais terceiros** funciona ao vivo hoje (Zap/VivaReal via glue-api, Chaves na Mão via XHR), mas **anti-bot pode zerar** a coleta em momentos distintos — nesse caso o collector loga e cai no fallback de amostra (1 imóvel). Coletar todas as páginas gera volume grande de requests; use `app.collector.max-pages` para conter.
 - Filtro inválido (`minPrice > maxPrice`) e página excedente retornam **200 vazio** (o spec previa 400 — validação ainda não implementada).
+
+## Testes
+
+- Perfil de teste usa H2 (`src/test/resources/application.properties`); ~48 testes.
+- Collectors testados com fixtures JSON reais (curl stub / `HttpServer`): paginação completa até `totalPages`, teto configurável (`maxPages`), escopo geográfico, fallback de amostra, parsing de moeda.
+- `PropertyControllerIntegrationTest` usa **standalone MockMvc** (mock de ports), pois o `spring-boot-test-autoconfigure` do Boot 4.x não expõe mais `@AutoConfigureMockMvc`.
 
 ## Spec e plan
 
