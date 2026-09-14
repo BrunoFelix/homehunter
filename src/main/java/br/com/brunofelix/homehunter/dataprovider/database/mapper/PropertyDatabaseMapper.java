@@ -4,6 +4,7 @@ import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertySourceEntity;
 import org.springframework.stereotype.Component;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ public class PropertyDatabaseMapper {
                         .externalId(s.externalId())
                         .url(s.url())
                         .price(s.price().value())
-                        .announcedAt(s.announcedAt())
+                        .announcedAt(s.announcedAt() != null ? s.announcedAt().truncatedTo(ChronoUnit.SECONDS) : null)
                         .collectedAt(s.collectedAt())
                         .build())
                 .collect(Collectors.toList());
