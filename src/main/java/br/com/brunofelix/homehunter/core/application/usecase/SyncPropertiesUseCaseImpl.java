@@ -12,7 +12,9 @@ import br.com.brunofelix.homehunter.core.domain.service.PropertyDeduplicationSer
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,6 +57,8 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
                                     .collect(Collectors.toList());
                             log.info("Applied pre-storage filter: {} properties kept from {}", collectedList.size(), collector.getPortalName());
                         }
+                        collectedList = distinctBySource(collectedList);
+                        log.info("{} unique listings from {}", collectedList.size(), collector.getPortalName());
 
                         List<Property> consolidatedList = new ArrayList<>();
                         for (CollectedProperty collected : collectedList) {
@@ -89,5 +93,16 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
         });
 
         return SyncStatus.ENQUEUED;
+    }
+
+    private List<CollectedProperty> distinctBySource(List<CollectedProperty> collected) {
+        if (collected.size() <= 1) {
+            return collected;
+        }
+        Map<String, CollectedProperty> uniqueBySource = new LinkedHashMap<>();
+        for (CollectedProperty cp : collected) {
+            uniqueBySource.putIfAbsent(cp.portalName() + "::" + cp.externalId(), cp);
+        }
+        return new ArrayList<>(uniqueBySource.values());
     }
 }

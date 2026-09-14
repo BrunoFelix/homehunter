@@ -115,4 +115,49 @@ class SyncPropertiesUseCaseImplTest {
         assertEquals(SyncStatus.ENQUEUED, first);
         assertEquals(SyncStatus.REJECTED_RUNNING, second);
     }
+
+    @Test
+    void shouldDeduplicateRepeatedSourceWithinSameBatch() throws InterruptedException {
+        when(repositoryPort.findById(any())).thenReturn(Optional.empty());
+        when(repositoryPort.findBySource(any(), any())).thenReturn(Optional.empty());
+        when(repositoryPort.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(collectorPort.collect(any())).thenReturn(List.of(
+                new CollectedProperty(
+                        "Apto Teste",
+                        PropertyType.APARTAMENTO,
+                        new Price(BigDecimal.valueOf(200000)),
+                        new Area(60.0),
+                        new Bedrooms(2),
+                        new Address("PE", "Recife", "Boa Viagem", null),
+                        PortalName.ZAP_IMOVEIS,
+                        "ext-1",
+                        "https://url.com",
+                        LocalDateTime.now()
+                ),
+                new CollectedProperty(
+                        "Apto Teste (repetido em outra página, fingerprint diferente)",
+                        PropertyType.APARTAMENTO,
+                        new Price(BigDecimal.valueOf(200000)),
+                        new Area(61.0),
+                        new Bedrooms(2),
+                        new Address("PE", "Recife", "Boa Viagem", null),
+                        PortalName.ZAP_IMOVEIS,
+                        "ext-1",
+                        "https://url.com",
+                        LocalDateTime.now()
+                )
+        ));
+
+        syncUseCase.sync(new CollectionScope("PE", List.of("Recife"), null));
+        Thread.sleep(500);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Property>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repositoryPort).saveAll(captor.capture());
+        List<Property> saved = captor.getValue();
+        assertEquals(1, saved.size(), "same portal+externalId repeated in the batch must yield a single property");
+        assertEquals(1, saved.get(0).getSources().size());
+        assertEquals("ext-1", saved.get(0).getSources().get(0).externalId());
+    }
 }
