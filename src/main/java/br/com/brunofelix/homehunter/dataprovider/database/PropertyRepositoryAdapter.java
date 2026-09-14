@@ -89,14 +89,6 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
 
     @Override
     @Transactional
-    public Property save(Property property) {
-        PropertyEntity entity = mapper.toEntity(property);
-        PropertyEntity saved = repository.save(entity);
-        return mapper.toDomain(saved);
-    }
-
-    @Override
-    @Transactional
     public List<Property> saveAll(List<Property> properties) {
         return properties.stream()
                 .map(mapper::toEntity)

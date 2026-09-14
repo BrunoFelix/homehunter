@@ -9,28 +9,30 @@ import br.com.brunofelix.homehunter.core.domain.model.CollectedProperty;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.service.PropertyDeduplicationService;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-@Slf4j
 public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
+
+    private static final Logger log = LoggerFactory.getLogger(SyncPropertiesUseCaseImpl.class);
 
     private final PropertyRepositoryPort repositoryPort;
     private final List<PropertyCollectorPort> collectorPorts;
     private final PropertyDeduplicationService deduplicationService;
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-    public SyncPropertiesUseCaseImpl(PropertyRepositoryPort repositoryPort, List<PropertyCollectorPort> collectorPorts, PropertyDeduplicationService deduplicationService) {
+    public SyncPropertiesUseCaseImpl(PropertyRepositoryPort repositoryPort, List<PropertyCollectorPort> collectorPorts, PropertyDeduplicationService deduplicationService, ExecutorService executorService) {
         this.repositoryPort = repositoryPort;
         this.collectorPorts = collectorPorts;
         this.deduplicationService = deduplicationService;
+        this.executorService = executorService;
     }
 
     @Override

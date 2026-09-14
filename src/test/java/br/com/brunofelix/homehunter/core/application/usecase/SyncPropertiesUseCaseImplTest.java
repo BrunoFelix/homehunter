@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -44,7 +46,8 @@ class SyncPropertiesUseCaseImplTest {
                 )
         ));
         deduplicationService = new PropertyDeduplicationService();
-        syncUseCase = new SyncPropertiesUseCaseImpl(repositoryPort, List.of(collectorPort), deduplicationService);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        syncUseCase = new SyncPropertiesUseCaseImpl(repositoryPort, List.of(collectorPort), deduplicationService, executorService);
     }
 
     @Test

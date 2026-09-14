@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ConditionalOnProperty(name = "app.collector.chavesnamao.enabled", havingValue = "true", matchIfMissing = true)
@@ -137,7 +138,9 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             ));
         }
 
-        return results;
+        return results.stream()
+                .filter(CollectionScopeFilter.matches(scope))
+                .collect(Collectors.toList());
     }
 
     private JsonNode itemsOf(JsonNode root) {
@@ -232,7 +235,12 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         if (!rawPrice.isNumber() || rawPrice.asDouble() <= 0) {
             return null;
         }
-        return BigDecimal.valueOf(rawPrice.asDouble());
+        try {
+            return new BigDecimal(rawPrice.asText());
+        } catch (NumberFormatException e) {
+            log.warn("Chaves na Mão malformed price '{}'; skipping", rawPrice.asText());
+            return null;
+        }
     }
 
     private Double parseArea(JsonNode item) {

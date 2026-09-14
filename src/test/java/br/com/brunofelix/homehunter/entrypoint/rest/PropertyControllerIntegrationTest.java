@@ -3,9 +3,9 @@ package br.com.brunofelix.homehunter.entrypoint.rest;
 import br.com.brunofelix.homehunter.core.application.model.CollectionScope;
 import br.com.brunofelix.homehunter.core.application.model.PagedResult;
 import br.com.brunofelix.homehunter.core.application.model.SyncStatus;
+import br.com.brunofelix.homehunter.core.application.port.in.GetPropertyInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SyncPropertiesInputPort;
-import br.com.brunofelix.homehunter.core.application.port.out.PropertyRepositoryPort;
 import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.entrypoint.rest.mapper.PropertyRestMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +39,7 @@ class PropertyControllerIntegrationTest {
     private MockMvc mockMvc;
     private SearchPropertiesInputPort searchPort;
     private SyncPropertiesInputPort syncPort;
-    private PropertyRepositoryPort repositoryPort;
+    private GetPropertyInputPort getPort;
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -50,10 +50,10 @@ class PropertyControllerIntegrationTest {
     void setUp() {
         searchPort = mock(SearchPropertiesInputPort.class);
         syncPort = mock(SyncPropertiesInputPort.class);
-        repositoryPort = mock(PropertyRepositoryPort.class);
+        getPort = mock(GetPropertyInputPort.class);
 
         PropertyController controller = new PropertyController(
-                searchPort, syncPort, repositoryPort, new PropertyRestMapper());
+                searchPort, syncPort, getPort, new PropertyRestMapper());
 
         MappingJackson2HttpMessageConverter converter =
                 new MappingJackson2HttpMessageConverter(objectMapper);
@@ -175,7 +175,7 @@ class PropertyControllerIntegrationTest {
 
     @Test
     void getByIdEndpoint_whenFound_shouldReturnProperty() throws Exception {
-        when(repositoryPort.findById(any())).thenReturn(Optional.of(sampleProperty));
+        when(getPort.getById(any())).thenReturn(Optional.of(sampleProperty));
 
         mockMvc.perform(get("/api/v1/properties/" + sampleProperty.getId().value()))
                 .andExpect(status().isOk())
@@ -195,7 +195,7 @@ class PropertyControllerIntegrationTest {
 
     @Test
     void getByIdEndpoint_whenMissing_shouldReturn404() throws Exception {
-        when(repositoryPort.findById(any())).thenReturn(Optional.empty());
+        when(getPort.getById(any())).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/properties/nao-existe"))
                 .andExpect(status().isNotFound());

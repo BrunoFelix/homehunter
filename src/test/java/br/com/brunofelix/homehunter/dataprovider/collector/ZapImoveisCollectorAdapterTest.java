@@ -17,40 +17,40 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class VivaRealCollectorAdapterTest {
+class ZapImoveisCollectorAdapterTest {
 
     private static final Pattern PAGE_PARAM = Pattern.compile("[?&]page=(\\d+)");
     private static final Pattern FROM_PARAM = Pattern.compile("[?&]from=(\\d+)");
 
-    private static final String API_URL = "https://glue-api.vivareal.com/v4/listings";
+    private static final String API_URL = "https://glue-api.zapimoveis.com.br/v4/listings";
 
     private static final String APTO =
-            "{\"listing\":{\"id\":\"2909080219\",\"externalId\":\"12035-Lc\",\"title\":null,"
-                    + "\"description\":\"Apartamento com 2 quartos em Recife\",\"status\":\"ACTIVE\","
+            "{\"listing\":{\"id\":\"zap-001\",\"externalId\":\"5701-Lz\",\"title\":null,"
+                    + "\"description\":\"Apartamento com 2 quartos em Boa Viagem\",\"status\":\"ACTIVE\","
                     + "\"createdAt\":\"2026-09-10T19:30:31.897+00:00\","
                     + "\"unitTypes\":[\"APARTMENT\"],\"propertyType\":\"UNIT\","
                     + "\"bedrooms\":[2],\"parkingSpaces\":[1],\"usableAreas\":[55,45],\"totalAreas\":[55,45],"
-                    + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":299000,\"yearlyIptu\":0,\"monthlyCondoFee\":0}],"
+                    + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":410000,\"yearlyIptu\":0,\"monthlyCondoFee\":0}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\","
-                    + "\"neighborhood\":\"Imbiribeira\",\"locationId\":\"BR>Pernambuco>NULL>Recife>Barrios>Imbiribeira\"}},"
-                    + "\"account\":{\"id\":\"br-abc\",\"name\":\"Imob São José\"},"
+                    + "\"neighborhood\":\"Boa Viagem\",\"locationId\":\"BR>Pernambuco>NULL>Recife>Barrios>Boa Viagem\"}},"
+                    + "\"account\":{\"id\":\"br-zap\",\"name\":\"Imob Z\"},"
                     + "\"link\":{\"name\":\"Apartamento com 2 quartos à venda, 55m²\","
-                    + "\"href\":\"/imovel/apartamento-2-quartos-imbiribeira-bairros-recife-com-garagem-55m2-venda-RS299000-id-2909080219/\"}}";
+                    + "\"href\":\"/imovel/apartamento-2-quartos-boa-viagem-bairros-recife-com-garagem-55m2-venda-RS410000-id-zap-001/\"}}";
 
     private static final String CASA =
-            "{\"listing\":{\"id\":\"3012345678\",\"title\":\"Casa Térrea à venda em Recife\","
+            "{\"listing\":{\"id\":\"zap-002\",\"title\":\"Casa Térrea à venda em Recife\","
                     + "\"createdAt\":\"2026-09-12T09:30:00Z\","
                     + "\"unitTypes\":[\"HOUSE\"],\"propertyType\":\"UNIT\","
                     + "\"bedrooms\":[3],\"usableAreas\":[\"100\"],\"totalAreas\":[\"120\"],"
                     + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":520000}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\",\"neighborhood\":null}},"
                     + "\"link\":{\"name\":\"Casa Térrea com 3 quartos\","
-                    + "\"href\":\"/imovel/casa-terrea-3-quartos-id-3012345678/\"}}";
+                    + "\"href\":\"/imovel/casa-terrea-3-quartos-id-zap-002/\"}}";
 
     @Test
     void shouldParseRealisticItemsAndStopOnEmptyPage() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
                 ? jsonResult(listingPage(5340, APTO, CASA))
                 : jsonResult(emptyPage()));
 
@@ -60,21 +60,22 @@ class VivaRealCollectorAdapterTest {
         assertEquals(List.of(1, 2), requestPages(urls));
 
         CollectedProperty apto = results.stream()
-                .filter(p -> p.externalId().equals("2909080219"))
+                .filter(p -> p.externalId().equals("zap-001"))
                 .findFirst().orElseThrow();
         assertEquals(PropertyType.APARTAMENTO, apto.type());
+        assertEquals(PortalName.ZAP_IMOVEIS, apto.portalName());
         assertEquals("Apartamento com 2 quartos à venda, 55m²", apto.title());
-        assertEquals(299000, apto.price().value().intValue());
+        assertEquals(410000, apto.price().value().intValue());
         assertEquals(55.0, apto.area().value());
         assertEquals(2, apto.bedrooms().value());
         assertEquals("PE", apto.address().state());
         assertEquals("RECIFE", apto.address().city());
-        assertEquals("IMBIRIBEIRA", apto.address().neighborhood());
+        assertEquals("BOA VIAGEM", apto.address().neighborhood());
         assertEquals(LocalDateTime.parse("2026-09-10T19:30:31.897"), apto.announcedAt());
-        assertEquals("https://www.vivareal.com.br/imovel/apartamento-2-quartos-imbiribeira-bairros-recife-com-garagem-55m2-venda-RS299000-id-2909080219/", apto.url());
+        assertEquals("https://www.zapimoveis.com.br/imovel/apartamento-2-quartos-boa-viagem-bairros-recife-com-garagem-55m2-venda-RS410000-id-zap-001/", apto.url());
 
         CollectedProperty casa = results.stream()
-                .filter(p -> p.externalId().equals("3012345678"))
+                .filter(p -> p.externalId().equals("zap-002"))
                 .findFirst().orElseThrow();
         assertEquals(PropertyType.CASA, casa.type());
         assertEquals(100.0, casa.area().value());
@@ -84,63 +85,34 @@ class VivaRealCollectorAdapterTest {
     }
 
     @Test
-    void shouldSkipMalformedItems() {
-        List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
-                ? jsonResult(listingPage(5340,
-                        APTO,
-                        "{\"listing\":{\"id\":null}}",
-                        "{\"listing\":{\"id\":\"1\",\"pricingInfos\":[{\"businessType\":\"SALE\"}]}}",
-                        "{\"listing\":{\"id\":\"2\",\"title\":\"Sem preço\"}}"))
-                : jsonResult(emptyPage()));
-
-        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
-
-        assertEquals(1, results.size());
-        assertTrue(results.stream().noneMatch(p -> p.externalId().equals("1")));
-        assertTrue(results.stream().noneMatch(p -> p.externalId().equals("2")));
-    }
-
-    @Test
     void shouldInjectSampleWhenHttpForbidden() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> new GlueApiCollectorSupport.CurlResult(403, new byte[0]));
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> new GlueApiCollectorSupport.CurlResult(403, new byte[0]));
 
         List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
-        assertEquals("viva-sample-01", results.get(0).externalId());
-        assertEquals(PortalName.VIVA_REAL, results.get(0).portalName());
+        assertEquals("zapimoveis-sample-01", results.get(0).externalId());
+        assertEquals(PortalName.ZAP_IMOVEIS, results.get(0).portalName());
         assertEquals(List.of(1), requestPages(urls));
     }
 
     @Test
     void shouldInjectSampleWhenFirstPageEmpty() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(emptyPage()));
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(emptyPage()));
 
         List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
-        assertEquals("viva-sample-01", results.get(0).externalId());
-        assertEquals(List.of(1), requestPages(urls));
-    }
-
-    @Test
-    void shouldRespectDeclaredTotalPages() {
-        List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(30, APTO)));
-
-        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
-
-        assertEquals(1, results.size());
+        assertEquals("zapimoveis-sample-01", results.get(0).externalId());
         assertEquals(List.of(1), requestPages(urls));
     }
 
     @Test
     void shouldCapLoopAtMaxPages() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(100000, APTO)));
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(100000, APTO)));
 
         List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
@@ -150,46 +122,49 @@ class VivaRealCollectorAdapterTest {
     }
 
     @Test
-    void shouldStopOnUnexpectedResponseStructure() {
+    void shouldInjectSampleWhenCurlFails() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult("{\"something\":\"else\"}"));
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> GlueApiCollectorSupport.CurlResult.failure());
 
         List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
 
         assertEquals(1, results.size());
-        assertEquals("viva-sample-01", results.get(0).externalId());
-        assertEquals(List.of(1), requestPages(urls));
+        assertEquals("zapimoveis-sample-01", results.get(0).externalId());
     }
 
     @Test
-    void shouldInjectSampleWhenCurlFails() {
+    void shouldFilterResultsByGeographicScope() {
         List<String> urls = new ArrayList<>();
-        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> GlueApiCollectorSupport.CurlResult.failure());
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
+                ? jsonResult(listingPage(5340, APTO))
+                : jsonResult(emptyPage()));
 
-        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("OLINDA"), null));
 
-        assertEquals(1, results.size());
-        assertEquals("viva-sample-01", results.get(0).externalId());
+        assertTrue(results.isEmpty(), "items outside the requested scope must be dropped (no sample leak)");
     }
 
     @Test
     void buildUrlShouldExposeApiContract() {
-        VivaRealCollectorAdapter adapter = new VivaRealCollectorAdapter(
+        ZapImoveisCollectorAdapter adapter = new ZapImoveisCollectorAdapter(
                 new PortalPropertyNormalizer(), API_URL, url -> GlueApiCollectorSupport.CurlResult.failure());
 
         for (int page = 1; page <= 3; page++) {
             String url = adapter.buildUrl(page);
-            assertValidApiUrl(url, page);
+            assertValidZapApiUrl(url, page);
         }
     }
 
-    private static void assertValidApiUrl(String url, int page) {
+    private static void assertValidZapApiUrl(String url, int page) {
         assertTrue(url.startsWith(API_URL + "?"), "expected base + query in: " + url);
         assertTrue(url.contains("categoryPage=RESULT"), "expected categoryPage in: " + url);
         assertTrue(url.contains("business=SALE"), "expected business in: " + url);
         assertTrue(url.contains("addressCity=Recife"), "expected addressCity in: " + url);
         assertTrue(url.contains("addressState=Pernambuco"), "expected addressState in: " + url);
-        assertTrue(url.contains("unitTypes=APARTMENT"), "expected unitTypes in: " + url);
+        assertTrue(url.contains("user=ba1dea62-766d-40c1-be67-2ee852f4e384"), "expected zapimoveis user token in: " + url);
+        assertTrue(url.contains("unitTypes=HOME%2CAPARTMENT"), "expected HOME+APARTMENT unit types in: " + url);
+        assertTrue(url.contains("KITNET"), "expected KITNET unit subtype in: " + url);
+        assertTrue(url.contains("legacyVivarealId"), "expected legacyVivarealId in includeFields: " + url);
         assertTrue(url.contains("__id=search"), "expected __id in: " + url);
 
         Matcher pm = PAGE_PARAM.matcher(url);
@@ -213,13 +188,13 @@ class VivaRealCollectorAdapterTest {
         return pages;
     }
 
-    private static VivaRealCollectorAdapter adapterWith(List<String> urls, Function<Integer, GlueApiCollectorSupport.CurlResult> handler) {
+    private static ZapImoveisCollectorAdapter adapterWith(List<String> urls, Function<Integer, GlueApiCollectorSupport.CurlResult> handler) {
         GlueApiCollectorSupport.CurlRunner runner = url -> {
-            assertValidApiUrl(url, pageOf(url));
+            assertValidZapApiUrl(url, pageOf(url));
             urls.add(url);
             return handler.apply(pageOf(url));
         };
-        return new VivaRealCollectorAdapter(new PortalPropertyNormalizer(), API_URL, runner);
+        return new ZapImoveisCollectorAdapter(new PortalPropertyNormalizer(), API_URL, runner);
     }
 
     private static int pageOf(String url) {

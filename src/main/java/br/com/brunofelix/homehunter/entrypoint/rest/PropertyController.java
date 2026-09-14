@@ -2,9 +2,9 @@ package br.com.brunofelix.homehunter.entrypoint.rest;
 
 import br.com.brunofelix.homehunter.core.application.model.PagedResult;
 import br.com.brunofelix.homehunter.core.application.model.SyncStatus;
+import br.com.brunofelix.homehunter.core.application.port.in.GetPropertyInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SyncPropertiesInputPort;
-import br.com.brunofelix.homehunter.core.application.port.out.PropertyRepositoryPort;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.model.PropertySearchCriteria;
@@ -26,13 +26,13 @@ public class PropertyController {
 
     private final SearchPropertiesInputPort searchPort;
     private final SyncPropertiesInputPort syncPort;
-    private final PropertyRepositoryPort repositoryPort;
+    private final GetPropertyInputPort getPort;
     private final PropertyRestMapper mapper;
 
-    public PropertyController(SearchPropertiesInputPort searchPort, SyncPropertiesInputPort syncPort, PropertyRepositoryPort repositoryPort, PropertyRestMapper mapper) {
+    public PropertyController(SearchPropertiesInputPort searchPort, SyncPropertiesInputPort syncPort, GetPropertyInputPort getPort, PropertyRestMapper mapper) {
         this.searchPort = searchPort;
         this.syncPort = syncPort;
-        this.repositoryPort = repositoryPort;
+        this.getPort = getPort;
         this.mapper = mapper;
     }
 
@@ -61,7 +61,7 @@ public class PropertyController {
     @GetMapping("/{id}")
     @Operation(summary = "Get property details by ID including all portal sources")
     public ResponseEntity<PropertyResponseDto> getById(@PathVariable String id) {
-        Optional<Property> property = repositoryPort.findById(new PropertyId(id));
+        Optional<Property> property = getPort.getById(new PropertyId(id));
         return property.map(p -> ResponseEntity.ok(mapper.toDto(p)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

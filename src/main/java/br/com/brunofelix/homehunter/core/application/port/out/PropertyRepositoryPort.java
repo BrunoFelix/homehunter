@@ -12,6 +12,5 @@ public interface PropertyRepositoryPort {
     Optional<Property> findById(PropertyId id);
     Optional<Property> findBySource(PortalName portalName, String externalId);
     PagedResult<Property> search(PropertySearchCriteria criteria);
-    Property save(Property property);
     List<Property> saveAll(List<Property> properties);
 }
