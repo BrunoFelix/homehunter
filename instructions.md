@@ -1,6 +1,6 @@
 # HomeHunter — Instruções do Projeto
 
-Backend de busca unificada de imóveis (Pernambuco) que coleta, consolida, deduplica e expõe anúncios de 3 portais (ZapImóveis, VivaReal, Chaves na Mão).
+Backend de busca unificada de imóveis (Pernambuco) que coleta, consolida, deduplica e expõe anúncios de 4 portais (ZapImóveis, VivaReal, Chaves na Mão, CTI Imobiliária).
 
 ## Stack
 
@@ -48,7 +48,7 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 
 - `core/domain` — agregados e Value Objects (Property, PropertyId, Price, Address...), zero dependências de framework.
 - `core/application` — casos de uso (`SyncPropertiesUseCase`, `SearchPropertiesUseCase`, `GetPropertyUseCase`), models neutros (`PagedResult`, `CollectionScope`, `SyncStatus`) e ports (`*InputPort`/`*OutputPort`).
-- `dataprovider` — adapters dirigidos: `database` (JPA + Specification) e `collector` (`GlueApiCollectorSupport` + `SystemCurlRunner` para Zap/VivaReal, JSoup para Chaves na Mão + Anti-Corruption Layer `PortalPropertyNormalizer`).
+- `dataprovider` — adapters dirigidos: `database` (JPA + Specification) e `collector` (`GlueApiCollectorSupport` + `SystemCurlRunner` para Zap/VivaReal, JSoup para Chaves na Mão e CTI Imobiliária + Anti-Corruption Layer `PortalPropertyNormalizer`).
 - `entrypoint` — adaptadores dirigentes: `rest` (PropertyController + DTOs + mappers) e `cron` (PropertySyncScheduler).
 
 Regra de dependência: dependências apontam sempre para dentro. Nada de Spring no `core`. Montagem de beans no Composition Root (`CoreBeanConfiguration`, incl. `ExecutorService syncExecutor` com `destroyMethod="shutdown"`).
@@ -66,7 +66,7 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 
 | Propriedade | Default |
 |---|---|
-| `app.collector.zapimoveis.enabled` / `vivareal.enabled` / `chavesnamao.enabled` | `true` |
+| `app.collector.zapimoveis.enabled` / `vivareal.enabled` / `chavesnamao.enabled` / `ctiimobiliaria.enabled` | `true` |
 | `app.collector.max-pages` | `0` (coleta tudo) |
 | `app.collector.scope.cities` | `RECIFE` |
 | `app.collector.cron` | `0 0 3 * * *` |
@@ -93,7 +93,7 @@ Swagger UI: `/swagger-ui.html` · OpenAPI JSON: `/api-docs`.
 
 ## Limitações conhecidas
 
-- **Scraping de portais terceiros** funciona ao vivo hoje (Zap/VivaReal via glue-api, Chaves na Mão via XHR), mas **anti-bot pode zerar** a coleta em momentos distintos — nesse caso o collector loga e cai no fallback de amostra (1 imóvel). Coletar todas as páginas gera volume grande de requests; use `app.collector.max-pages` para conter.
+- **Scraping de portais terceiros** funciona ao vivo hoje (Zap/VivaReal via glue-api, Chaves na Mão via XHR, CTI Imobiliária via POST de formulário), mas **anti-bot pode zerar** a coleta em momentos distintos — nesse caso o collector loga e cai no fallback de amostra (1 imóvel). Coletar todas as páginas gera volume grande de requests; use `app.collector.max-pages` para conter.
 - Filtro inválido (`minPrice > maxPrice`) e página excedente retornam **200 vazio** (o spec previa 400 — validação ainda não implementada).
 
 ## Testes

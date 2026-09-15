@@ -2,11 +2,12 @@
 
 Backend de busca unificada de imóveis em Pernambuco. Coleta anúncios de portais imobiliários, consolida em um único registro, deduplica por identidade determinística (SHA-256) e expõe busca unificada via REST API.
 
-Portais integrados (3 collectors):
+Portais integrados (4 collectors):
 
 - **ZapImóveis** — glue-api (curl subprocess)
 - **VivaReal** — glue-api (curl subprocess)
 - **Chaves na Mão** — API XHR ao vivo (JSoup)
+- **CTI Imobiliária** — formulário POST ao vivo (`retornar-imoveis-disponiveis`, JSoup)
 
 ## Stack
 
@@ -63,6 +64,7 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 | `app.collector.zapimoveis.enabled` | `true` | Habilita o collector ZapImóveis |
 | `app.collector.vivareal.enabled` | `true` | Habilita o collector VivaReal |
 | `app.collector.chavesnamao.enabled` | `true` | Habilita o collector Chaves na Mão |
+| `app.collector.ctiimobiliaria.enabled` | `true` | Habilita o collector CTI Imobiliária |
 | `app.collector.max-pages` | `0` | **0 = coleta todas as páginas** declaradas pela API; >0 limita a um teto de segurança |
 | `app.collector.cron` | `0 0 3 * * *` | Cron do sync automático |
 | `app.collector.timeout` | `30s` | Timeout das requisições |

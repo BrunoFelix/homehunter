@@ -8,10 +8,11 @@
 
 ## 1. Overview & Objective
 
-HomeHunter is a unified real estate search application that collects, aggregates, deduplicates, filters, and stores property listings (houses and apartments) in **Pernambuco** from three major portals:
+HomeHunter is a unified real estate search application that collects, aggregates, deduplicates, filters, and stores property listings (houses and apartments) in **Pernambuco** from four major portals:
 - ZapImóveis
 - VivaReal
 - Chaves na Mão
+- CTI Imobiliária
 
 The application follows **Hexagonal Architecture (Ports & Adapters)**, **Domain-Driven Design (DDD)**, and **Clean Code** standards.
 
@@ -55,7 +56,7 @@ br.com.brunofelix.homehunter
 │   │   │   ├── Property.java            #    Aggregate Root (comportamento rico)
 │   │   │   ├── PropertyId.java          #    Value Object (identidade natural determinística)
 │   │   │   ├── PropertyType.java        #    Enum (CASA, APARTAMENTO)
-│   │   │   ├── PortalName.java          #    Enum (ZAP, VIVAREAL, CHAVES_NA_MAO)
+│   │   │   ├── PortalName.java          #    Enum (ZAP, VIVAREAL, CHAVES_NA_MAO, CTI_IMOBILIARIA)
 │   │   │   ├── Price.java               #    Value Object (moeda BRL + valor)
 │   │   │   ├── Area.java                #    Value Object (m²)
 │   │   │   ├── Bedrooms.java            #    Value Object (quantidade de quartos)
@@ -104,6 +105,7 @@ br.com.brunofelix.homehunter
 │       ├── ZapImoveisCollectorAdapter.java
 │       ├── VivaRealCollectorAdapter.java
 │       ├── ChavesNaMaoCollectorAdapter.java
+│       ├── CtiImobiliariaCollectorAdapter.java
 │
 └── entrypoint/                          # ── DRIVING ADAPTERS ──
     ├── rest/
@@ -270,6 +272,7 @@ Ciclo: coleta → deduplica → persiste.
 | `app.collector.zapimoveis.enabled` | `true` | Habilita/desabilita portal |
 | `app.collector.vivareal.enabled` | `true` | idem |
 | `app.collector.chavesnamao.enabled` | `true` | idem |
+| `app.collector.ctiimobiliaria.enabled` | `true` | idem |
 | `app.collector.timeout` | `30s` | Timeout HTTP por portal |
 | `app.collector.politeness-delay` | `500ms` | Atraso entre requisições por portal (boas práticas) |
 

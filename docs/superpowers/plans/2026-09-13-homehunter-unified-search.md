@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement a unified real estate search and aggregator backend in Java 26 / Spring Boot 4 using Hexagonal Architecture and DDD to collect, deduplicate, store, and search properties in Pernambuco from ZapImóveis, VivaReal, and Chaves na Mão (ImovelWeb foi removido do escopo — ver Appendix A).
+**Goal:** Implement a unified real estate search and aggregator backend in Java 26 / Spring Boot 4 using Hexagonal Architecture and DDD to collect, deduplicate, store, and search properties in Pernambuco from ZapImóveis, VivaReal, Chaves na Mão, and CTI Imobiliária (ImovelWeb foi removido do escopo — ver Appendix A).
 
 **Architecture:** Hexagonal Architecture with strictly isolated `core` (domain & application), `dataprovider` (database & portal collectors), and `entrypoint` (REST & cron schedulers). Domain rules and value objects have zero framework dependencies.
 
@@ -76,6 +76,7 @@ br.com.brunofelix.homehunter
 │       ├── ZapImoveisCollectorAdapter.java
 │       ├── VivaRealCollectorAdapter.java
 │       ├── ChavesNaMaoCollectorAdapter.java
+│       ├── CtiImobiliariaCollectorAdapter.java
 └── entrypoint/
     ├── rest/
     │   ├── PropertyController.java
@@ -167,6 +168,7 @@ app.collector.scope.cities=RECIFE
 app.collector.zapimoveis.enabled=true
 app.collector.vivareal.enabled=true
 app.collector.chavesnamao.enabled=true
+app.collector.ctiimobiliaria.enabled=true
 app.collector.timeout=30s
 app.collector.politeness-delay=500ms
 
