@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -68,11 +67,11 @@ public class PropertyController {
 
     @PostMapping("/sync")
     @Operation(summary = "Trigger asynchronous portal synchronization batch with optional pre-storage filters")
-    public ResponseEntity<Map<String, String>> sync(@RequestBody(required = false) SyncRequestDto requestDto) {
+    public ResponseEntity<ApiResponseDto> sync(@RequestBody(required = false) SyncRequestDto requestDto) {
         SyncStatus status = syncPort.sync(mapper.toDomain(requestDto));
         if (status == SyncStatus.REJECTED_RUNNING) {
-            return ResponseEntity.status(409).body(Map.of("status", "rejected", "message", "Synchronization already in progress"));
+            return ResponseEntity.status(409).body(new ApiResponseDto("rejected", "Synchronization already in progress"));
         }
-        return ResponseEntity.accepted().body(Map.of("status", "enqueued", "message", "Portal synchronization batch started"));
+        return ResponseEntity.accepted().body(new ApiResponseDto("enqueued", "Portal synchronization batch started"));
     }
 }

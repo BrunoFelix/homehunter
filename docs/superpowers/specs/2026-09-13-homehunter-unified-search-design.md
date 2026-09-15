@@ -87,6 +87,9 @@ br.com.brunofelix.homehunter
 │               ├── PropertyRepositoryPort.java
 │               └── PropertyCollectorPort.java
 │
+├── config/                             # ── COMPOSITION ROOT (beans Spring, fora do core) ──
+│   └── CoreBeanConfiguration.java
+│
 ├── dataprovider/                        # ── DRIVEN ADAPTERS ──
 │   ├── database/
 │   │   ├── PropertyRepositoryAdapter.java
@@ -110,11 +113,11 @@ br.com.brunofelix.homehunter
 └── entrypoint/                          # ── DRIVING ADAPTERS ──
     ├── rest/
     │   ├── PropertyController.java
+    │   ├── GlobalExceptionHandler.java
     │   ├── dto/
     │   │   ├── PropertyResponseDto.java
     │   │   ├── PropertySourceResponseDto.java
     │   │   ├── PagedResultDto.java
-    │   │   ├── CollectionScopeRequestDto.java
     │   │   └── PropertySearchRequestDto.java
     │   └── mapper/
     │       └── PropertyRestMapper.java            # Property/PagedResult ↔ DTO

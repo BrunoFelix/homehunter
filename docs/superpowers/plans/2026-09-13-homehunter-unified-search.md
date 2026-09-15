@@ -80,11 +80,10 @@ br.com.brunofelix.homehunter
 └── entrypoint/
     ├── rest/
     │   ├── PropertyController.java
-    │   ├── dto/
+│   ├── dto/
     │   │   ├── PropertyResponseDto.java
     │   │   ├── PropertySourceResponseDto.java
     │   │   ├── PagedResultDto.java
-    │   │   ├── CollectionScopeRequestDto.java
     │   │   └── PropertySearchRequestDto.java
     │   └── mapper/
     │       └── PropertyRestMapper.java
@@ -1684,9 +1683,10 @@ git commit -m "feat: implement portal collectors with Jsoup scraping and Anti-Co
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/PropertySourceResponseDto.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/PropertyResponseDto.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/PagedResultDto.java`
-- Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/CollectionScopeRequestDto.java`
+- Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/ApiResponseDto.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/mapper/PropertyRestMapper.java`
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/PropertyController.java`
+- Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/GlobalExceptionHandler.java`
 
 **Interfaces:**
 - Consumes: `SyncPropertiesInputPort`, `SearchPropertiesInputPort`, `PropertyRepositoryPort`.
@@ -1752,18 +1752,6 @@ public record PagedResultDto<T>(
 ) {}
 ```
 
-Create `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/dto/CollectionScopeRequestDto.java`:
-```java
-package br.com.brunofelix.homehunter.entrypoint.rest.dto;
-
-import java.util.List;
-
-public record CollectionScopeRequestDto(
-        String state,
-        List<String> cities
-) {}
-```
-
 Create `src/main/java/br/com/brunofelix/homehunter/entrypoint/rest/mapper/PropertyRestMapper.java`:
 ```java
 package br.com.brunofelix.homehunter.entrypoint.rest.mapper;
@@ -1771,6 +1759,8 @@ package br.com.brunofelix.homehunter.entrypoint.rest.mapper;
 import br.com.brunofelix.homehunter.core.application.model.CollectionScope;
 import br.com.brunofelix.homehunter.core.application.model.PagedResult;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
+import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
+import br.com.brunofelix.homehunter.core.domain.model.SyncFilterCriteria;
 import br.com.brunofelix.homehunter.entrypoint.rest.dto.*;
 import org.springframework.stereotype.Component;
 import java.util.stream.Collectors;
@@ -1822,11 +1812,20 @@ public class PropertyRestMapper {
         );
     }
 
-    public CollectionScope toDomain(CollectionScopeRequestDto dto) {
+public CollectionScope toDomain(SyncRequestDto dto) {
         if (dto == null) {
-            return new CollectionScope("PE", null);
+            return new CollectionScope("PE", null, null);
         }
-        return new CollectionScope(dto.state(), dto.cities());
+        SyncFilterCriteria filter = new SyncFilterCriteria(
+                dto.type() != null ? PropertyType.valueOf(dto.type().toUpperCase()) : null,
+                dto.minPrice(),
+                dto.maxPrice(),
+                dto.minArea(),
+                dto.maxArea(),
+                dto.bedrooms(),
+                dto.neighborhood()
+        );
+        return new CollectionScope(dto.state(), dto.cities(), filter);
     }
 }
 ```
@@ -1901,14 +1900,14 @@ public class PropertyController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/sync")
-    @Operation(summary = "Trigger asynchronous portal synchronization batch")
-    public ResponseEntity<Map<String, String>> sync(@RequestBody(required = false) CollectionScopeRequestDto requestDto) {
+@PostMapping("/sync")
+    @Operation(summary = "Trigger asynchronous portal synchronization batch with optional pre-storage filters")
+    public ResponseEntity<ApiResponseDto> sync(@RequestBody(required = false) SyncRequestDto requestDto) {
         SyncStatus status = syncPort.sync(mapper.toDomain(requestDto));
         if (status == SyncStatus.REJECTED_RUNNING) {
-            return ResponseEntity.status(409).body(Map.of("status", "rejected", "message", "Synchronization already in progress"));
+            return ResponseEntity.status(409).body(new ApiResponseDto("rejected", "Synchronization already in progress"));
         }
-        return ResponseEntity.accepted().body(Map.of("status", "enqueued", "message", "Portal synchronization batch started"));
+        return ResponseEntity.accepted().body(new ApiResponseDto("enqueued", "Portal synchronization batch started"));
     }
 }
 ```
@@ -1926,7 +1925,7 @@ git commit -m "feat: implement REST controller and OpenAPI mapping for propertie
 
 **Files:**
 - Create: `src/main/java/br/com/brunofelix/homehunter/entrypoint/cron/PropertySyncScheduler.java`
-- Create: `src/main/java/br/com/brunofelix/homehunter/core/application/config/CoreBeanConfiguration.java`
+- Create: `src/main/java/br/com/brunofelix/homehunter/config/CoreBeanConfiguration.java`
 - Modify: `src/main/java/br/com/brunofelix/homehunter/BrunofelixApplication.java`
 
 **Interfaces:**
@@ -1934,9 +1933,9 @@ git commit -m "feat: implement REST controller and OpenAPI mapping for propertie
 
 - [ ] **Step 1: Implement Core Bean Configuration, Scheduler and Application runner**
 
-Create `src/main/java/br/com/brunofelix/homehunter/core/application/config/CoreBeanConfiguration.java`:
+Create `src/main/java/br/com/brunofelix/homehunter/config/CoreBeanConfiguration.java`:
 ```java
-package br.com.brunofelix.homehunter.core.application.config;
+package br.com.brunofelix.homehunter.config;
 
 import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SyncPropertiesInputPort;

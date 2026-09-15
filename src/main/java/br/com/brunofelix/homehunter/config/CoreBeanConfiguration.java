@@ -1,4 +1,4 @@
-package br.com.brunofelix.homehunter.core.application.config;
+package br.com.brunofelix.homehunter.config;
 
 import br.com.brunofelix.homehunter.core.application.port.in.GetPropertyInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInputPort;

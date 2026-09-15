@@ -68,11 +68,11 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 |---|---|
 | `app.collector.zapimoveis.enabled` / `vivareal.enabled` / `chavesnamao.enabled` / `ctiimobiliaria.enabled` | `true` |
 | `app.collector.max-pages` | `0` (coleta tudo) |
-| `app.collector.scope.cities` | `RECIFE` |
+| `app.collector.scope.cities` | `RECIFE` | Reservado — ainda não consumido pelo código (scheduler fixa PE/RECIFE) |
 | `app.collector.cron` | `0 0 3 * * *` |
-| `app.collector.timeout` / `politeness-delay` | `30s` / `500ms` | Delay por página (±30% jitter) |
-| `app.collector.pause-every-pages` | `20` | Pausa a cada N páginas (0 = desabilitado) |
-| `app.collector.pause-duration` | `10s` | Duração da pausa entre lotes |
+| `app.collector.timeout` / `politeness-delay` | `30s` / `500ms` |
+| `app.collector.pause-every-pages` | `20` |
+| `app.collector.pause-duration` | `10s` |
 
 ## Identidade, deduplicação e normalização
 
@@ -94,11 +94,11 @@ Swagger UI: `/swagger-ui.html` · OpenAPI JSON: `/api-docs`.
 ## Limitações conhecidas
 
 - **Scraping de portais terceiros** funciona ao vivo hoje (Zap/VivaReal via glue-api, Chaves na Mão via XHR, CTI Imobiliária via POST de formulário), mas **anti-bot pode zerar** a coleta em momentos distintos — nesse caso o collector loga e cai no fallback de amostra (1 imóvel). Coletar todas as páginas gera volume grande de requests; use `app.collector.max-pages` para conter.
-- Filtro inválido (`minPrice > maxPrice`) e página excedente retornam **200 vazio** (o spec previa 400 — validação ainda não implementada).
+- Filtro inválido (`minPrice > maxPrice`) e página excedente retornam **200 vazio**; parâmetros malformados (`type` inválido, JSON malformado) retornam **400** via `GlobalExceptionHandler`.
 
 ## Testes
 
-- Perfil de teste usa H2 (`src/test/resources/application.properties`); ~48 testes.
+- Perfil de teste usa H2 (`src/test/resources/application.properties`); ~62 testes.
 - Collectors testados com fixtures JSON reais (curl stub / `HttpServer`): paginação completa até `totalPages`, teto configurável (`maxPages`), escopo geográfico, fallback de amostra, parsing de moeda.
 - `PropertyControllerIntegrationTest` usa **standalone MockMvc** (mock de ports), pois o `spring-boot-test-autoconfigure` do Boot 4.x não expõe mais `@AutoConfigureMockMvc`.
 

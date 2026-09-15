@@ -90,9 +90,10 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Override
     @Transactional
     public List<Property> saveAll(List<Property> properties) {
-        return properties.stream()
+        List<PropertyEntity> entities = properties.stream()
                 .map(mapper::toEntity)
-                .map(repository::save)
+                .collect(Collectors.toList());
+        return repository.saveAll(entities).stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }

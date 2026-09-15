@@ -2,6 +2,7 @@ package br.com.brunofelix.homehunter.dataprovider.database.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,7 +69,8 @@ public class PropertyEntity {
     @Column(name = "street")
     private String street;
 
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @Builder.Default
     private List<PropertySourceEntity> sources = new ArrayList<>();
 

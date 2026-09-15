@@ -60,9 +60,9 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 
 | Propriedade | Default | Descrição |
 |---|---|---|
-| `app.collector.scope.cities` | `RECIFE` | Escopo geográfico padrão (filtro pré/pós-coleta) |
+| `app.collector.scope.cities` | `RECIFE` | Reservado para uso futuro — hoje o scheduler fixa PE/RECIFE |
 | `app.collector.zapimoveis.enabled` | `true` | Habilita o collector ZapImóveis |
-| `app.collector.vivareal.enabled` | `true` | Habilita o collector VivaReal |
+| `app.collector.vivareal.enabled` | `true` | Habilita o collector VivaReal (disabilitado no `application.properties` enviado) |
 | `app.collector.chavesnamao.enabled` | `true` | Habilita o collector Chaves na Mão |
 | `app.collector.ctiimobiliaria.enabled` | `true` | Habilita o collector CTI Imobiliária |
 | `app.collector.max-pages` | `0` | **0 = coleta todas as páginas** declaradas pela API; >0 limita a um teto de segurança |
@@ -101,7 +101,7 @@ Swagger UI: `/swagger-ui.html` · OpenAPI JSON: `/api-docs`.
 
 ```powershell
 .\gradlew.bat build     # compila
-.\gradlew.bat test      # roda todos os testes (~48)
+.\gradlew.bat test      # roda todos os testes (~62)
 .\gradlew.bat check     # check completo
 .\gradlew.bat bootJar   # produz o jar executável
 .\gradlew.bat bootRun   # sobe a aplicação
@@ -117,7 +117,8 @@ Swagger UI: `/swagger-ui.html` · OpenAPI JSON: `/api-docs`.
 ## Limitações conhecidas
 
 - Scraping de portais terceiros pode ser bloqueado por anti-bot em momentos distintos (página 1 vazia → fallback para amostra). A coleta de todas as páginas gera volume grande de requests — monitore `app.collector.max-pages`.
-- Filtro inválido (`minPrice > maxPrice`) e página excedente ainda retornam **200 vazio** (validação de 400 não implementada).
+- Filtro inválido (`minPrice > maxPrice`) e página excedente ainda retornam **200 vazio**; parâmetros malformados (`type` inválido, JSON malformado) retornam **400** via `GlobalExceptionHandler`.
+- Erros de domínio e parâmetros inválidos retornam 400 com `{status:"error", message}` (`ApiResponseDto`).
 
 ## Spec e plan
 

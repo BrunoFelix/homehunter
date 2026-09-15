@@ -59,6 +59,7 @@ class PropertyControllerIntegrationTest {
                 new MappingJackson2HttpMessageConverter(objectMapper);
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(converter)
                 .build();
 
@@ -176,6 +177,16 @@ class PropertyControllerIntegrationTest {
         assertEquals(5, captor.getValue().size());
     }
 
+    @Test
+    void searchEndpoint_withInvalidType_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/properties")
+                        .param("type", "INVALIDO"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is("error")));
+
+        verifyNoInteractions(searchPort);
+    }
+
     // ==================== GET /api/v1/properties/{id} ====================
 
     @Test
@@ -250,6 +261,17 @@ class PropertyControllerIntegrationTest {
         assertEquals(150.0, captor.getValue().filter().maxArea());
         assertEquals(3, captor.getValue().filter().bedrooms());
         assertEquals("BOA VIAGEM", captor.getValue().filter().neighborhood());
+    }
+
+    @Test
+    void syncEndpoint_withInvalidType_shouldReturn400() throws Exception {
+        mockMvc.perform(post("/api/v1/properties/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"INVALIDO\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is("error")));
+
+        verifyNoInteractions(syncPort);
     }
 
     @Test

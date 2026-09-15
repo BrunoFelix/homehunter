@@ -66,13 +66,6 @@ public class PropertyRestMapper {
         );
     }
 
-    public CollectionScope toDomain(CollectionScopeRequestDto dto) {
-        if (dto == null) {
-            return new CollectionScope("PE", null, null);
-        }
-        return new CollectionScope(dto.state(), dto.cities(), null);
-    }
-
     public CollectionScope toDomain(SyncRequestDto dto) {
         if (dto == null) {
             return new CollectionScope("PE", null, null);
