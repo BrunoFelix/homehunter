@@ -62,7 +62,7 @@ O shell do ambiente é PowerShell: **não use `&&`**; use `cmd1; if ($?) { cmd2 
 |---|---|---|
 | `app.collector.scope.cities` | `RECIFE` | Reservado para uso futuro — hoje o scheduler fixa PE/RECIFE |
 | `app.collector.zapimoveis.enabled` | `true` | Habilita o collector ZapImóveis |
-| `app.collector.vivareal.enabled` | `true` | Habilita o collector VivaReal (disabilitado no `application.properties` enviado) |
+| `app.collector.vivareal.enabled` | `true` | Habilita o collector VivaReal |
 | `app.collector.chavesnamao.enabled` | `true` | Habilita o collector Chaves na Mão |
 | `app.collector.ctiimobiliaria.enabled` | `true` | Habilita o collector CTI Imobiliária |
 | `app.collector.max-pages` | `0` | **0 = coleta todas as páginas** declaradas pela API; >0 limita a um teto de segurança |
