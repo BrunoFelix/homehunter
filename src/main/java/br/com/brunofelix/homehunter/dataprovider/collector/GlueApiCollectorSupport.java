@@ -134,6 +134,11 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                     config.samplePrice(),
                     config.sampleArea(),
                     config.sampleBedrooms(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     "PE",
                     "Recife",
                     "Boa Viagem",
@@ -181,6 +186,11 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
 
         Double area = parseArea(listing);
         Integer bedrooms = parseBedrooms(listing);
+        Integer bathrooms = firstCount(listing.path("bathrooms"));
+        Integer suites = firstCount(listing.path("suites"));
+        Integer parkingSpaces = firstCount(listing.path("parkingSpaces"));
+        BigDecimal condoFee = pricingNumber(listing, "monthlyCondoFee");
+        BigDecimal iptu = pricingNumber(listing, "yearlyIptu");
         String rawType = hasUnitType(listing, "HOUSE") ? "casa" : "apartamento";
         JsonNode address = listing.path("address");
         String state = address.path("stateAcronym").asText(null);
@@ -194,6 +204,11 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 price,
                 area,
                 bedrooms,
+                bathrooms,
+                suites,
+                parkingSpaces,
+                condoFee,
+                iptu,
                 state,
                 city,
                 neighborhood,
@@ -202,6 +217,23 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 absoluteUrl(url),
                 announcedAt
         );
+    }
+
+    private Integer firstCount(JsonNode node) {
+        if (!node.isArray() || node.isEmpty()) {
+            return null;
+        }
+        int value = node.get(0).asInt(-1);
+        return value >= 0 ? value : null;
+    }
+
+    private BigDecimal pricingNumber(JsonNode listing, String field) {
+        for (JsonNode info : listing.path("pricingInfos")) {
+            if ("SALE".equals(info.path("businessType").asText()) && info.path(field).isNumber()) {
+                return toBigDecimal(info.path(field).asText());
+            }
+        }
+        return null;
     }
 
     private boolean hasUnitType(JsonNode listing, String type) {

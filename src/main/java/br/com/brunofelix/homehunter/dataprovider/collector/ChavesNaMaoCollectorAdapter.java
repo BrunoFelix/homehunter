@@ -161,6 +161,11 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                     BigDecimal.valueOf(410000),
                     80.0,
                     3,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     "PE",
                     "Recife",
                     "Boa Viagem",
@@ -201,6 +206,11 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         String rawType = item.path("realtyType").path("id").asInt(0) == 4 ? "casa" : "apartamento";
         Double area = parseArea(item);
         Integer bedrooms = parseBedrooms(item);
+        Integer bathrooms = countOf(item.path("bathrooms"));
+        Integer suites = countOf(item.path("suites"));
+        Integer parkingSpaces = countOf(item.path("garages"));
+        BigDecimal condoFee = parseCurrency(item.path("prices").path("condominiumFee"));
+        BigDecimal iptu = parseCurrency(item.path("prices").path("iptuValue"));
         String state = valueOr(item.path("location").path("state").path("acronym"), "PE");
         String city = valueOr(item.path("location").path("city").path("name"), null);
         String neighborhood = valueOr(item.path("location").path("neighborhood").path("name"), null);
@@ -212,6 +222,11 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 price,
                 area,
                 bedrooms,
+                bathrooms,
+                suites,
+                parkingSpaces,
+                condoFee,
+                iptu,
                 state,
                 city,
                 neighborhood,
@@ -220,6 +235,27 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 absoluteUrl(url),
                 announcedAt
         );
+    }
+
+    private Integer countOf(JsonNode node) {
+        int count = node.path("count").asInt(-1);
+        return count >= 0 ? count : null;
+    }
+
+    private BigDecimal parseCurrency(JsonNode node) {
+        String raw = node.asText(null);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String cleaned = raw.replace("R$", "").replace(" ", "").trim();
+        boolean hasComma = cleaned.contains(",");
+        String decimalized = hasComma ? cleaned.replace(".", "").replace(",", ".") : cleaned.replace(".", "");
+        try {
+            return new BigDecimal(decimalized);
+        } catch (NumberFormatException e) {
+            log.warn("Chaves na Mão malformed amount '{}'; skipped", raw);
+            return null;
+        }
     }
 
     private String valueOr(JsonNode node, String fallback) {

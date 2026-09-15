@@ -1,6 +1,7 @@
 package br.com.brunofelix.homehunter.core.domain.model;
 
 import br.com.brunofelix.homehunter.core.domain.exception.DomainException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record PropertySource(
@@ -9,6 +10,11 @@ public record PropertySource(
         String externalId,
         String url,
         Price price,
+        Integer bathrooms,
+        Integer suites,
+        Integer parkingSpaces,
+        BigDecimal condoFee,
+        BigDecimal iptu,
         LocalDateTime announcedAt,
         LocalDateTime collectedAt
 ) {

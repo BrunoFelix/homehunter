@@ -30,8 +30,8 @@ class ZapImoveisCollectorAdapterTest {
                     + "\"description\":\"Apartamento com 2 quartos em Boa Viagem\",\"status\":\"ACTIVE\","
                     + "\"createdAt\":\"2026-09-10T19:30:31.897+00:00\","
                     + "\"unitTypes\":[\"APARTMENT\"],\"propertyType\":\"UNIT\","
-                    + "\"bedrooms\":[2],\"parkingSpaces\":[1],\"usableAreas\":[55,45],\"totalAreas\":[55,45],"
-                    + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":410000,\"yearlyIptu\":0,\"monthlyCondoFee\":0}],"
+                    + "\"bedrooms\":[2],\"bathrooms\":[2],\"suites\":[1],\"parkingSpaces\":[1],\"usableAreas\":[55,45],\"totalAreas\":[55,45],"
+                    + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":410000,\"yearlyIptu\":135,\"monthlyCondoFee\":740}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\","
                     + "\"neighborhood\":\"Boa Viagem\",\"locationId\":\"BR>Pernambuco>NULL>Recife>Barrios>Boa Viagem\"}},"
                     + "\"account\":{\"id\":\"br-zap\",\"name\":\"Imob Z\"},"
@@ -69,6 +69,11 @@ class ZapImoveisCollectorAdapterTest {
         assertEquals(410000, apto.price().value().intValue());
         assertEquals(55.0, apto.area().value());
         assertEquals(2, apto.bedrooms().value());
+        assertEquals(2, apto.bathrooms());
+        assertEquals(1, apto.suites());
+        assertEquals(1, apto.parkingSpaces());
+        assertEquals(740, apto.condoFee().intValue());
+        assertEquals(135, apto.iptu().intValue());
         assertEquals("PE", apto.address().state());
         assertEquals("RECIFE", apto.address().city());
         assertEquals("BOA VIAGEM", apto.address().neighborhood());

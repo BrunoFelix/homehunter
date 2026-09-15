@@ -14,6 +14,11 @@ public class PortalPropertyNormalizer {
             BigDecimal rawPrice,
             Double rawArea,
             Integer rawBedrooms,
+            Integer rawBathrooms,
+            Integer rawSuites,
+            Integer rawParkingSpaces,
+            BigDecimal rawCondoFee,
+            BigDecimal rawIptu,
             String state,
             String city,
             String neighborhood,
@@ -43,7 +48,12 @@ public class PortalPropertyNormalizer {
                 portalName,
                 externalId,
                 url,
-                announcedAt
+                announcedAt,
+                rawBathrooms,
+                rawSuites,
+                rawParkingSpaces,
+                rawCondoFee,
+                rawIptu
         );
     }
 

@@ -1,6 +1,7 @@
 package br.com.brunofelix.homehunter.core.domain.model;
 
 import br.com.brunofelix.homehunter.core.domain.exception.DomainException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -13,12 +14,17 @@ public class Property {
     private Price price;
     private Area area;
     private Bedrooms bedrooms;
+    private Integer bathrooms;
+    private Integer suites;
+    private Integer parkingSpaces;
+    private BigDecimal condoFee;
+    private BigDecimal iptu;
     private Address address;
     private final List<PropertySource> sources;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, List<PropertySource> sources, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, List<PropertySource> sources, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt) {
         if (id == null) throw new DomainException("PropertyId is required");
         if (title == null || title.isBlank()) throw new DomainException("Title is required");
         if (type == null) throw new DomainException("PropertyType is required");
@@ -36,6 +42,11 @@ public class Property {
         this.bedrooms = bedrooms;
         this.address = address;
         this.sources = new ArrayList<>(sources);
+        this.bathrooms = bathrooms;
+        this.suites = suites;
+        this.parkingSpaces = parkingSpaces;
+        this.condoFee = condoFee;
+        this.iptu = iptu;
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
         this.updatedAt = updatedAt != null ? updatedAt : LocalDateTime.now();
     }
@@ -56,6 +67,11 @@ public class Property {
                 collected.externalId(),
                 collected.url(),
                 collected.price(),
+                collected.bathrooms(),
+                collected.suites(),
+                collected.parkingSpaces(),
+                collected.condoFee(),
+                collected.iptu(),
                 collected.announcedAt(),
                 now
         );
@@ -69,6 +85,11 @@ public class Property {
                 collected.bedrooms(),
                 collected.address(),
                 List.of(source),
+                collected.bathrooms(),
+                collected.suites(),
+                collected.parkingSpaces(),
+                collected.condoFee(),
+                collected.iptu(),
                 now,
                 now
         );
@@ -89,6 +110,11 @@ public class Property {
                         collected.externalId(),
                         collected.url(),
                         collected.price(),
+                        collected.bathrooms(),
+                        collected.suites(),
+                        collected.parkingSpaces(),
+                        collected.condoFee(),
+                        collected.iptu(),
                         collected.announcedAt(),
                         now
                 ));
@@ -104,6 +130,11 @@ public class Property {
                 collected.externalId(),
                 collected.url(),
                 collected.price(),
+                collected.bathrooms(),
+                collected.suites(),
+                collected.parkingSpaces(),
+                collected.condoFee(),
+                collected.iptu(),
                 collected.announcedAt(),
                 now
         ));
@@ -122,6 +153,11 @@ public class Property {
                 .orElse(sources.get(0));
 
         this.price = winningSource.price();
+        this.bathrooms = winningSource.bathrooms();
+        this.suites = winningSource.suites();
+        this.parkingSpaces = winningSource.parkingSpaces();
+        this.condoFee = winningSource.condoFee();
+        this.iptu = winningSource.iptu();
     }
 
     public PropertyId getId() { return id; }
@@ -130,6 +166,11 @@ public class Property {
     public Price getPrice() { return price; }
     public Area getArea() { return area; }
     public Bedrooms getBedrooms() { return bedrooms; }
+    public Integer getBathrooms() { return bathrooms; }
+    public Integer getSuites() { return suites; }
+    public Integer getParkingSpaces() { return parkingSpaces; }
+    public BigDecimal getCondoFee() { return condoFee; }
+    public BigDecimal getIptu() { return iptu; }
     public Address getAddress() { return address; }
     public List<PropertySource> getSources() { return List.copyOf(sources); }
     public LocalDateTime getCreatedAt() { return createdAt; }

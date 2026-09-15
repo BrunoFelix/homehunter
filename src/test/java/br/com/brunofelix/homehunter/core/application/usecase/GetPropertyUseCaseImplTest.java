@@ -35,7 +35,12 @@ class GetPropertyUseCaseImplTest {
                         PortalName.ZAP_IMOVEIS,
                         "ext-1",
                         "https://zap.com/1",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 ),
                 LocalDateTime.now()
         );

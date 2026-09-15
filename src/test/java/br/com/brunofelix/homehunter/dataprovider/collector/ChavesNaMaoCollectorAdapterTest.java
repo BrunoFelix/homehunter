@@ -28,8 +28,8 @@ class ChavesNaMaoCollectorAdapterTest {
     private static final String REALISTIC_APTO =
             "{\"id\":44940247,\"title\":\"Apartamento com 2 quartos à venda na Rua Doutor Artur Gonçalves, Madalena, Recife\","
                     + "\"url\":\"/imovel/apartamento-a-venda-2-quartos-com-garagem-pe-recife-madalena-47m2-RS435000/id-44940247/\","
-                    + "\"prices\":{\"rawPrice\":435000,\"main\":\"R$ 435.000\"},"
-                    + "\"area\":{\"total\":\"47\",\"useful\":\"47\"},\"bedrooms\":{\"count\":2},"
+                    + "\"prices\":{\"rawPrice\":435000,\"main\":\"R$ 435.000\",\"condominiumFee\":\"R$ 740\",\"iptuValue\":\"R$ 135\"},"
+                    + "\"area\":{\"total\":\"47\",\"useful\":\"47\"},\"bedrooms\":{\"count\":2},\"bathrooms\":{\"count\":2},\"suites\":{\"count\":1},\"garages\":{\"count\":1},"
                     + "\"location\":{\"neighborhood\":{\"name\":\"Madalena\"},\"city\":{\"name\":\"Recife\"},\"state\":{\"acronym\":\"PE\"}},"
                     + "\"realtyType\":{\"id\":1},\"createdAt\":\"2026-07-22T10:11:11.000\"}";
 
@@ -125,6 +125,11 @@ class ChavesNaMaoCollectorAdapterTest {
         assertEquals(435000, apto.price().value().intValue());
         assertEquals(47.0, apto.area().value());
         assertEquals(2, apto.bedrooms().value());
+        assertEquals(2, apto.bathrooms());
+        assertEquals(1, apto.suites());
+        assertEquals(1, apto.parkingSpaces());
+        assertEquals(740, apto.condoFee().intValue());
+        assertEquals(135, apto.iptu().intValue());
         assertEquals("PE", apto.address().state());
         assertEquals("RECIFE", apto.address().city());
         assertEquals("MADALENA", apto.address().neighborhood());

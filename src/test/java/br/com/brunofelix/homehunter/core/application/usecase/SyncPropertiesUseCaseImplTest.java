@@ -42,7 +42,12 @@ class SyncPropertiesUseCaseImplTest {
                         PortalName.ZAP_IMOVEIS,
                         "ext-1",
                         "https://url.com",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 )
         ));
         deduplicationService = new PropertyDeduplicationService();
@@ -80,9 +85,19 @@ class SyncPropertiesUseCaseImplTest {
                         "ext-1",
                         "https://zap.com/1",
                         new Price(BigDecimal.valueOf(200000)),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         LocalDateTime.now(),
                         LocalDateTime.now()
                 )),
+                null,
+                null,
+                null,
+                null,
+                null,
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );
@@ -133,7 +148,12 @@ class SyncPropertiesUseCaseImplTest {
                         PortalName.ZAP_IMOVEIS,
                         "ext-1",
                         "https://url.com",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 ),
                 new CollectedProperty(
                         "Apto Teste (repetido em outra página, fingerprint diferente)",
@@ -145,7 +165,12 @@ class SyncPropertiesUseCaseImplTest {
                         PortalName.ZAP_IMOVEIS,
                         "ext-1",
                         "https://url.com",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 )
         ));
 

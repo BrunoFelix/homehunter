@@ -25,7 +25,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.ZAP_IMOVEIS,
                 "ext-123",
                 "https://zap.com/123",
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property property = service.deduplicate(Optional.empty(), collected);
@@ -48,7 +53,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.ZAP_IMOVEIS,
                 "ext-123",
                 "https://zap.com/123",
-                LocalDateTime.now().minusDays(2)
+                LocalDateTime.now().minusDays(2),
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
@@ -63,7 +73,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.VIVA_REAL,
                 "viva-456",
                 "https://vivareal.com/456",
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property merged = service.deduplicate(Optional.of(existing), newCollected);
@@ -84,7 +99,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.ZAP_IMOVEIS,
                 "ext-123",
                 "https://zap.com/123",
-                LocalDateTime.now().minusDays(2)
+                LocalDateTime.now().minusDays(2),
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
@@ -99,7 +119,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.ZAP_IMOVEIS,
                 "ext-123",
                 "https://zap.com/123-v2",
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property merged = service.deduplicate(Optional.of(existing), updatedCollected);
@@ -117,6 +142,11 @@ class PropertyDeduplicationServiceTest {
                 "zap-sample-01",
                 "https://zap.com/sample",
                 new Price(BigDecimal.valueOf(410000)),
+                null,
+                null,
+                null,
+                null,
+                null,
                 now.minusDays(1),
                 now.minusDays(1)
         );
@@ -129,6 +159,11 @@ class PropertyDeduplicationServiceTest {
                 new Bedrooms(3),
                 new Address("PE", "Recife", "Boa Viagem", null),
                 List.of(persistedSource),
+                null,
+                null,
+                null,
+                null,
+                null,
                 now.minusDays(1),
                 now.minusDays(1)
         );
@@ -143,7 +178,12 @@ class PropertyDeduplicationServiceTest {
                 PortalName.ZAP_IMOVEIS,
                 "zap-sample-01",
                 "https://zap.com/sample",
-                now
+                now,
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         Property merged = service.deduplicate(Optional.of(existing), reCollected);

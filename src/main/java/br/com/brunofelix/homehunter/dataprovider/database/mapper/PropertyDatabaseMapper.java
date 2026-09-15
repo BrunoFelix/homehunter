@@ -19,6 +19,11 @@ public class PropertyDatabaseMapper {
                 .price(domain.getPrice().value())
                 .area(domain.getArea().value())
                 .bedrooms(domain.getBedrooms().value())
+                .bathrooms(domain.getBathrooms())
+                .suites(domain.getSuites())
+                .parkingSpaces(domain.getParkingSpaces())
+                .condoFee(domain.getCondoFee())
+                .iptu(domain.getIptu())
                 .state(domain.getAddress().state())
                 .city(domain.getAddress().city())
                 .neighborhood(domain.getAddress().neighborhood())
@@ -35,6 +40,11 @@ public class PropertyDatabaseMapper {
                         .externalId(s.externalId())
                         .url(s.url())
                         .price(s.price().value())
+                        .bathrooms(s.bathrooms())
+                        .suites(s.suites())
+                        .parkingSpaces(s.parkingSpaces())
+                        .condoFee(s.condoFee())
+                        .iptu(s.iptu())
                         .announcedAt(s.announcedAt() != null ? s.announcedAt().truncatedTo(ChronoUnit.SECONDS) : null)
                         .collectedAt(s.collectedAt())
                         .build())
@@ -52,6 +62,11 @@ public class PropertyDatabaseMapper {
                         se.getExternalId(),
                         se.getUrl(),
                         new Price(se.getPrice()),
+                        se.getBathrooms(),
+                        se.getSuites(),
+                        se.getParkingSpaces(),
+                        se.getCondoFee(),
+                        se.getIptu(),
                         se.getAnnouncedAt(),
                         se.getCollectedAt()
                 ))
@@ -66,6 +81,11 @@ public class PropertyDatabaseMapper {
                 new Bedrooms(entity.getBedrooms()),
                 new Address(entity.getState(), entity.getCity(), entity.getNeighborhood(), entity.getStreet()),
                 sources,
+                entity.getBathrooms(),
+                entity.getSuites(),
+                entity.getParkingSpaces(),
+                entity.getCondoFee(),
+                entity.getIptu(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

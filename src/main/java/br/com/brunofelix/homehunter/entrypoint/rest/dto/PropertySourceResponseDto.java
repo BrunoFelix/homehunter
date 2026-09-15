@@ -9,6 +9,11 @@ public record PropertySourceResponseDto(
         String externalId,
         String url,
         BigDecimal price,
+        Integer bathrooms,
+        Integer suites,
+        Integer parkingSpaces,
+        BigDecimal condoFee,
+        BigDecimal iptu,
         LocalDateTime announcedAt,
         LocalDateTime collectedAt
 ) {}

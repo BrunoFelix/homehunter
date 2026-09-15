@@ -73,7 +73,12 @@ class PropertyControllerIntegrationTest {
                         PortalName.ZAP_IMOVEIS,
                         "ext-test-001",
                         "https://zap.com/001",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 ),
                 LocalDateTime.now()
         );

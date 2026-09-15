@@ -20,6 +20,11 @@ public class PropertyRestMapper {
                         s.externalId(),
                         s.url(),
                         s.price().value(),
+                        s.bathrooms(),
+                        s.suites(),
+                        s.parkingSpaces(),
+                        s.condoFee(),
+                        s.iptu(),
                         s.announcedAt(),
                         s.collectedAt()
                 ))
@@ -32,6 +37,11 @@ public class PropertyRestMapper {
                 property.getPrice().value(),
                 property.getArea().value(),
                 property.getBedrooms().value(),
+                property.getBathrooms(),
+                property.getSuites(),
+                property.getParkingSpaces(),
+                property.getCondoFee(),
+                property.getIptu(),
                 property.getAddress().state(),
                 property.getAddress().city(),
                 property.getAddress().neighborhood(),

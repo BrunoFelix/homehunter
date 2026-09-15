@@ -41,6 +41,21 @@ public class PropertyEntity {
     @Column(name = "bedrooms", nullable = false)
     private Integer bedrooms;
 
+    @Column(name = "bathrooms")
+    private Integer bathrooms;
+
+    @Column(name = "suites")
+    private Integer suites;
+
+    @Column(name = "parking_spaces")
+    private Integer parkingSpaces;
+
+    @Column(name = "condo_fee", precision = 12, scale = 2)
+    private BigDecimal condoFee;
+
+    @Column(name = "iptu", precision = 12, scale = 2)
+    private BigDecimal iptu;
+
     @Column(name = "state", length = 2, nullable = false)
     private String state;
 
