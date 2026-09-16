@@ -1,4 +1,5 @@
 body { font-family: sans-serif; padding: 20px; }
 header { text-align: center; margin-bottom: 20px; }
+#filters { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 #results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
 .property-card { border: 1px solid #ccc; padding: 10px; border-radius: 5px; }

@@ -8,8 +8,23 @@
 <body>
     <header>
         <h1>HomeHunter</h1>
-        <input type="text" id="search-input" placeholder="Buscar imóveis...">
-        <button id="search-btn">Buscar</button>
+        <div id="filters">
+            <select id="state-select"><option value="">Todos os Estados</option></select>
+            <select id="city-select"><option value="">Todas as Cidades</option></select>
+            <input type="number" id="min-price" placeholder="Preço Mín">
+            <input type="number" id="max-price" placeholder="Preço Máx">
+            <select id="sort-select">
+                <option value="price,asc">Preço (menor)</option>
+                <option value="price,desc">Preço (maior)</option>
+                <option value="announcedAt,desc">Mais recentes</option>
+            </select>
+            <select id="size-select">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            <button id="search-btn">Buscar</button>
+        </div>
     </header>
     <main id="results-grid"></main>
     <script src="app.js"></script>
