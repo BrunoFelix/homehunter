@@ -19,25 +19,28 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
 
 ## Detalhamento da API
 - Endpoint de Busca: `GET /api/v1/properties`
+- Endpoint de Metadados:
+  - `GET /api/v1/properties/states`: Retorna lista de estados disponíveis.
+  - `GET /api/v1/properties/cities?state={state}`: Retorna lista de cidades para um estado.
 - Parâmetros de Query (Filtros):
-  - `state` (String, default: "PE")
-  - `city` (String, default: "RECIFE")
+  - `state` (String, opcional, default: null - busca todos)
+  - `city` (String, opcional, default: null - busca todos)
   - `neighborhood` (String, opcional)
-  - `type` (Enum: APARTMENT, HOUSE, etc., opcional)
+  - `type` (Enum, opcional)
   - `minPrice`, `maxPrice` (BigDecimal, opcional)
   - `minArea`, `maxArea` (Double, opcional)
   - `bedrooms` (Integer, opcional)
   - `page`, `size` (int, default: 0, 20)
-  - `sort` (String: "field,direction", campos permitidos: "price", "type", "announcedAt", direction: "asc" ou "desc", ex: "price,asc", opcional - requer implementação no backend)
-- Estrutura de Resposta esperada: `PagedResultDto` contendo lista de `PropertyResponseDto`.
+  - `sort` (String, opcional: "price", "type", "announcedAt", direction: "asc" ou "desc")
 
 ## Layout e UX
-- Formulário de Busca Avançada (colapsável ou no topo):
-  - Campos: Estado, Cidade, Bairro, Tipo, Preço Mín/Máx, Área Mín/Máx, Quartos.
+- Formulário de Busca Avançada:
+  - Campos Dinâmicos: Estado e Cidade serão `<select>` preenchidos dinamicamente ao carregar a página. Inicialmente não selecionam filtro (buscam tudo).
   - Seleção de Ordenação: Campo para escolher campo (preço, tipo, data de anúncio) e direção (asc, desc).
   - Seleção de Tamanho de Página: Campo para escolher o número de resultados por página (20, 50 ou 100).
 - Conteúdo: Grid responsivo exibindo cards de imóveis com detalhes principais.
 - Interação: Botão "Buscar" aplica todos os filtros e ordenação na query da API.
+
 
 
 ## Configuração Spring Boot
