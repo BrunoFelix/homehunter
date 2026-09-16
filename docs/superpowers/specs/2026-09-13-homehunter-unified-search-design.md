@@ -185,7 +185,7 @@ Ciclo: coleta → deduplica → persiste.
 2. Para cada `PropertyCollectorPort` **ativo** (config), executa `collect(CollectionScope)`.
 3. Para cada `CollectedProperty`, `PropertyDeduplicationService` decide criar ou fundir.
 4. Persiste agregados afetados via `PropertyRepositoryPort` (transação por agregado).
-5. **Tolerância a falhas**: falha de um portal não derruba o job; resultados por portal são logados (sucesso/falha, contagens). O job como um todo falha apenas se o repositório falhar.
+5. **Tolerância a falhas**: falha de um portal não derruba o job; resultados por portal são logados (sucesso/falha, contagens). Cada collector loga em `info` o início e o fim da coleta (`collection started...` / `collection finished: N property(ies) collected (M live)`) e o progresso por página (`loading page X/Y...`). O job como um todo falha apenas se o repositório falhar.
 
 ### 5.2 `SearchPropertiesUseCase`
 1. Recebe `PropertySearchCriteria` (estado, cidade, bairro, tipo, faixas de preço/área, `bedrooms` exato, `page`, `size`).

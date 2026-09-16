@@ -131,7 +131,7 @@ class CtiImobiliariaCollectorAdapterTest {
         assertEquals("RECIFE", apto.address().city());
         assertEquals("CORDEIRO", apto.address().neighborhood());
         assertEquals(LocalDateTime.parse("2026-08-17T20:20:22"), apto.announcedAt());
-        assertEquals("http://127.0.0.1:" + server.getAddress().getPort() + "/apartamento-a-venda-cordeiro-recife-pe", apto.url());
+        assertEquals("http://127.0.0.1:" + server.getAddress().getPort() + "/apartamento-a-venda-cordeiro-recife-pe/7894", apto.url());
 
         CollectedProperty casa = results.stream()
                 .filter(p -> p.externalId().equals("7950"))

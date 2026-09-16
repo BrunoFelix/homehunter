@@ -56,7 +56,7 @@ Regra de dependência: dependências apontam sempre para dentro. Nada de Spring 
 ## Coleta
 
 - **Paginação completa**: os collectors percorrem todas as páginas até o total declarado pela API (`search.totalCount` / `metadata.totalPages`) — não há mais cap fixo de 10 páginas. Ex.: PE/Recife no ZapImóveis ≈ 244 páginas × 30 itens (~7300 anúncios).
-- Cada página loga em `info`: `loading page X/Y...` (a 1ª ainda sem total conhecido). Extras: HTTP não-200, estrutura inesperada e cap configurado logam `warn`.
+- Cada collector loga em `info` o início e o fim da coleta (`{portal} collection started...` / `collection finished: N property(ies) collected (M live)`, onde N são as retornadas após o filtro e M o total ao vivo) e o progresso por página: `loading page X/Y...` (a 1ª ainda sem total conhecido). Extras: HTTP não-200, estrutura inesperada e cap configurado logam `warn`.
 - `app.collector.max-pages` (default `0`) = teto de segurança opcional; `>0` limita a coleta.
 - Escopo geográfico (`CollectionScope` state/cities) é honrado pós-coleta via `CollectionScopeFilter` em **todos** os collectors.
 - **Throttling anti-DDoS**: `app.collector.politeness-delay` (default `500ms`) aplica um delay entre **cada página** com jitter de ±30% (evita padrão periódico); a cada `app.collector.pause-every-pages` páginas (default `20`) ainda dorme `app.collector.pause-duration` (default `10s`) como freio macro.

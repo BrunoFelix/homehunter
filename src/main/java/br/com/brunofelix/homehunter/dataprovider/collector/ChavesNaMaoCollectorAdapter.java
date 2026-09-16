@@ -93,6 +93,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
 
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
+        log.info("Chaves na Mão collection started...");
         List<CollectedProperty> results = new ArrayList<>();
         int declaredMax = 0;
         for (int page = 1; ; page++) {
@@ -176,9 +177,11 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             ));
         }
 
-        return results.stream()
+        List<CollectedProperty> filtered = results.stream()
                 .filter(CollectionScopeFilter.matches(scope))
                 .collect(Collectors.toList());
+        log.info("Chaves na Mão collection finished: {} property(ies) collected ({} live).", filtered.size(), results.size());
+        return filtered;
     }
 
     private JsonNode itemsOf(JsonNode root) {
@@ -272,10 +275,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             return LocalDateTime.now(ZoneOffset.UTC);
         }
         try {
-            return LocalDateTime.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                    .atZone(BRAZIL_ZONE)
-                    .withZoneSameInstant(ZoneOffset.UTC)
-                    .toLocalDateTime();
+            return LocalDateTime.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } catch (DateTimeParseException ignored) {
             // try offset form below
         }

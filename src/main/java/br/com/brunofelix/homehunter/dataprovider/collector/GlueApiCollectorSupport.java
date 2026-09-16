@@ -71,6 +71,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
 
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
+        log.info("{} collection started...", config.portalLabel());
         List<CollectedProperty> results = new ArrayList<>();
         int declaredMax = 0;
         for (int page = 1; ; page++) {
@@ -149,9 +150,11 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
             ));
         }
 
-        return results.stream()
+        List<CollectedProperty> filtered = results.stream()
                 .filter(CollectionScopeFilter.matches(scope))
                 .collect(Collectors.toList());
+        log.info("{} collection finished: {} property(ies) collected ({} live).", config.portalLabel(), filtered.size(), results.size());
+        return filtered;
     }
 
     protected void throttle(int page) {

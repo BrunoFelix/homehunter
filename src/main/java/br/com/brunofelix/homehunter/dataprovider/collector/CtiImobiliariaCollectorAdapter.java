@@ -105,6 +105,7 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
 
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
+        log.info("CTI Imobiliária collection started...");
         List<CollectedProperty> results = new ArrayList<>();
         int declaredMax = 0;
         for (int page = 1; ; page++) {
@@ -190,9 +191,11 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
             ));
         }
 
-        return results.stream()
+        List<CollectedProperty> filtered = results.stream()
                 .filter(CollectionScopeFilter.matches(scope))
                 .collect(Collectors.toList());
+        log.info("CTI Imobiliária collection finished: {} property(ies) collected ({} live).", filtered.size(), results.size());
+        return filtered;
     }
 
     private CollectedProperty toProperty(JsonNode item) {
@@ -236,7 +239,7 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
                 neighborhood,
                 PortalName.CTI_IMOBILIARIA,
                 id,
-                baseUrl + "/" + slug,
+                baseUrl + "/" + slug + "/" + id,
                 announcedAt
         );
     }
