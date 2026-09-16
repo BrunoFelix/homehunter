@@ -2,17 +2,16 @@ package br.com.brunofelix.homehunter.dataprovider.database.mapper;
 
 import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
-import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertySourceEntity;
 import org.springframework.stereotype.Component;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class PropertyDatabaseMapper {
 
     public PropertyEntity toEntity(Property domain) {
-        PropertyEntity entity = PropertyEntity.builder()
+        // Assume domain.getSources() is not empty and pick the first or most recent one
+        CollectedProperty source = domain.getSources().get(0); 
+
+        return PropertyEntity.builder()
                 .id(domain.getId().value())
                 .title(domain.getTitle())
                 .type(domain.getType().name())
@@ -28,49 +27,30 @@ public class PropertyDatabaseMapper {
                 .city(domain.getAddress().city())
                 .neighborhood(domain.getAddress().neighborhood())
                 .street(domain.getAddress().street())
+                .portalName(source.portalName().name())
+                .externalId(source.externalId())
+                .url(source.url())
+                .announcedAt(source.announcedAt())
+                .collectedAt(source.collectedAt())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();
-
-        List<PropertySourceEntity> sourceEntities = domain.getSources().stream()
-                .map(s -> PropertySourceEntity.builder()
-                        .id(s.id())
-                        .property(entity)
-                        .portalName(s.portalName().name())
-                        .externalId(s.externalId())
-                        .url(s.url())
-                        .price(s.price().value())
-                        .bathrooms(s.bathrooms())
-                        .suites(s.suites())
-                        .parkingSpaces(s.parkingSpaces())
-                        .condoFee(s.condoFee())
-                        .iptu(s.iptu())
-                        .announcedAt(s.announcedAt() != null ? s.announcedAt().truncatedTo(ChronoUnit.SECONDS) : null)
-                        .collectedAt(s.collectedAt())
-                        .build())
-                .collect(Collectors.toList());
-
-        entity.setSources(sourceEntities);
-        return entity;
     }
 
     public Property toDomain(PropertyEntity entity) {
-        List<PropertySource> sources = entity.getSources().stream()
-                .map(se -> new PropertySource(
-                        se.getId(),
-                        PortalName.valueOf(se.getPortalName()),
-                        se.getExternalId(),
-                        se.getUrl(),
-                        new Price(se.getPrice()),
-                        se.getBathrooms(),
-                        se.getSuites(),
-                        se.getParkingSpaces(),
-                        se.getCondoFee(),
-                        se.getIptu(),
-                        se.getAnnouncedAt(),
-                        se.getCollectedAt()
-                ))
-                .collect(Collectors.toList());
+        PropertySource source = new PropertySource(
+                PortalName.valueOf(entity.getPortalName()),
+                entity.getExternalId(),
+                entity.getUrl(),
+                new Price(entity.getPrice()),
+                entity.getBathrooms(),
+                entity.getSuites(),
+                entity.getParkingSpaces(),
+                entity.getCondoFee(),
+                entity.getIptu(),
+                entity.getAnnouncedAt(),
+                entity.getCollectedAt()
+        );
 
         return new Property(
                 new PropertyId(entity.getId()),
@@ -80,7 +60,7 @@ public class PropertyDatabaseMapper {
                 new Area(entity.getArea()),
                 new Bedrooms(entity.getBedrooms()),
                 new Address(entity.getState(), entity.getCity(), entity.getNeighborhood(), entity.getStreet()),
-                sources,
+                List.of(source),
                 entity.getBathrooms(),
                 entity.getSuites(),
                 entity.getParkingSpaces(),
