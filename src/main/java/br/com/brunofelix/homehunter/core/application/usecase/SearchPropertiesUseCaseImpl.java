@@ -5,15 +5,6 @@ import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInp
 import br.com.brunofelix.homehunter.core.application.port.out.PropertyRepositoryPort;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertySearchCriteria;
-
-public class SearchPropertiesUseCaseImpl implements SearchPropertiesInputPort {
-
-    private final PropertyRepositoryPort repositoryPort;
-
-    public SearchPropertiesUseCaseImpl(PropertyRepositoryPort repositoryPort) {
-        this.repositoryPort = repositoryPort;
-    }
-
 import java.util.List;
 
 public class SearchPropertiesUseCaseImpl implements SearchPropertiesInputPort {

@@ -9,13 +9,18 @@ import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.model.PropertySearchCriteria;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
-import br.com.brunofelix.homehunter.entrypoint.rest.dto.*;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.ApiResponseDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.PagedResultDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.PropertyResponseDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.SyncRequestDto;
 import br.com.brunofelix.homehunter.entrypoint.rest.mapper.PropertyRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
