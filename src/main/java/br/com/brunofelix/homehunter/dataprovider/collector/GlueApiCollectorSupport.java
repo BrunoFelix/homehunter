@@ -178,6 +178,9 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         }
         BigDecimal price = parsePrice(listing);
         String url = wrapper.path("link").path("href").asText(null);
+        if (price != null && url != null && !url.contains(price.toString())) {
+            log.warn("url sem valor");
+        }
         if (title == null || title.isBlank() || price == null || url == null) {
             log.debug("Skipping {} item {} without title, price or URL", config.portalLabel(), id);
             return null;
@@ -246,10 +249,14 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
 
     private BigDecimal parsePrice(JsonNode listing) {
         for (JsonNode info : listing.path("pricingInfos")) {
-            if ("SALE".equals(info.path("businessType").asText())
-                    && info.path("price").isNumber()
-                    && info.path("price").asDouble() > 0) {
-                return toBigDecimal(info.path("price").asText());
+            if ("SALE".equals(info.path("businessType").asText())) {
+                if (info.path("price").isNumber() && info.path("price").asDouble() > 0) {
+                    BigDecimal price = toBigDecimal(info.path("price").asText());
+                    log.debug("{} - Preço extraído: {} (raw: {})", config.portalLabel(), price, info.path("price").asText());
+                    return price;
+                } else {
+                    log.warn("{} - Preço não numérico ou zero em pricingInfos: {}", config.portalLabel(), info.toString());
+                }
             }
         }
         return null;

@@ -151,7 +151,7 @@ class PropertyDeduplicationServiceTest {
                 now.minusDays(1)
         );
         Property existing = new Property(
-                PropertyId.generate("PE", "Recife", "Boa Viagem", PropertyType.APARTAMENTO, 80.0, 3),
+                PropertyId.generate("PE", "Recife", "Boa Viagem", PropertyType.APARTAMENTO, 80.0, 3, 1, new BigDecimal("410000")),
                 "Apartamento Exemplo",
                 PropertyType.APARTAMENTO,
                 new Price(BigDecimal.valueOf(410000)),

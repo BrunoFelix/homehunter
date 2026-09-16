@@ -58,7 +58,9 @@ public class Property {
                 collected.address().neighborhood(),
                 collected.type(),
                 collected.area().value(),
-                collected.bedrooms().value()
+                collected.bedrooms().value(),
+                collected.bathrooms(),
+                collected.price().value()
         );
 
         PropertySource source = new PropertySource(

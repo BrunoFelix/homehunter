@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.math.BigDecimal;
 
 public record PropertyId(String value) {
     public PropertyId {
@@ -13,14 +14,15 @@ public record PropertyId(String value) {
         }
     }
 
-    public static PropertyId generate(String state, String city, String neighborhood, PropertyType type, Double area, Integer bedrooms) {
-        if (state == null || city == null || type == null || area == null || bedrooms == null) {
+    public static PropertyId generate(String state, String city, String neighborhood, PropertyType type, Double area, Integer bedrooms, Integer bathrooms, BigDecimal price) {
+        if (state == null || city == null || type == null || area == null || bedrooms == null || price == null) {
             throw new DomainException("Missing required attributes for PropertyId generation");
         }
+        int normBathrooms = bathrooms != null ? bathrooms : 0;
         String normState = state.trim().toUpperCase(Locale.ROOT);
         String normCity = city.trim().toUpperCase(Locale.ROOT);
         String normNeighborhood = neighborhood != null ? neighborhood.trim().toUpperCase(Locale.ROOT) : "";
-        String rawKey = String.format("%s|%s|%s|%s|%.1f|%d", normState, normCity, normNeighborhood, type, area, bedrooms);
+        String rawKey = String.format("%s|%s|%s|%s|%.1f|%d|%d|%.2f", normState, normCity, normNeighborhood, type, area, bedrooms, normBathrooms, price);
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

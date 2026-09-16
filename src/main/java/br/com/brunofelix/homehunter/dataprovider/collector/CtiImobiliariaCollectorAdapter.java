@@ -235,7 +235,7 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
                 neighborhood,
                 PortalName.CTI_IMOBILIARIA,
                 id,
-                baseUrl + "/" + slug + "/" + id,
+                baseUrl + "/imovel/" + slug + "/" + id,
                 announcedAt
         );
     }

@@ -69,7 +69,9 @@ public class SyncPropertiesUseCaseImpl implements SyncPropertiesInputPort {
                                         collected.address().neighborhood(),
                                         collected.type(),
                                         collected.area().value(),
-                                        collected.bedrooms().value()
+                                        collected.bedrooms().value(),
+                                        collected.bathrooms(),
+                                        collected.price().value()
                                 );
                                 Optional<Property> existing = repositoryPort
                                         .findBySource(collected.portalName(), collected.externalId())
