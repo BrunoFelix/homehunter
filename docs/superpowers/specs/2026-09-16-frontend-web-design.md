@@ -28,7 +28,7 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
   - `minArea`, `maxArea` (Double, opcional)
   - `bedrooms` (Integer, opcional)
   - `page`, `size` (int, default: 0, 20)
-  - `sort` (String: "field,direction", ex: "price,asc", opcional - requer implementação no backend)
+  - `sort` (String: "field,direction", campos permitidos: "price", "type", "announcedAt", direction: "asc" ou "desc", ex: "price,asc", opcional - requer implementação no backend)
 - Estrutura de Resposta esperada: `PagedResultDto` contendo lista de `PropertyResponseDto`.
 
 ## Layout e UX
