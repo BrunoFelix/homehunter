@@ -18,37 +18,26 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
 4. `app.js` renderiza dados no DOM.
 
 ## Detalhamento da API
-- Endpoint de Busca: `GET /api/v1/properties?search={termo}`
-- Estrutura de Resposta esperada (exemplo):
-  ```json
-  {
-    "content": [
-      {
-        "id": "...",
-        "title": "...",
-        "type": "...",
-        "price": 100000.00,
-        "area": 50.0,
-        "bedrooms": 2,
-        "bathrooms": 1,
-        "suites": 0,
-        "parkingSpaces": 1,
-        "condoFee": 500.00,
-        "iptu": 100.00,
-        "state": "...",
-        "city": "...",
-        "neighborhood": "...",
-        "street": "...",
-        "sources": [...]
-      }
-    ]
-  }
-  ```
+- Endpoint de Busca: `GET /api/v1/properties`
+- Parâmetros de Query (Filtros):
+  - `state` (String, default: "PE")
+  - `city` (String, default: "RECIFE")
+  - `neighborhood` (String, opcional)
+  - `type` (Enum: APARTMENT, HOUSE, etc., opcional)
+  - `minPrice`, `maxPrice` (BigDecimal, opcional)
+  - `minArea`, `maxArea` (Double, opcional)
+  - `bedrooms` (Integer, opcional)
+  - `page`, `size` (int, default: 0, 20)
+  - `sort` (String: "field,direction", ex: "price,asc", opcional - requer implementação no backend)
+- Estrutura de Resposta esperada: `PagedResultDto` contendo lista de `PropertyResponseDto`.
 
 ## Layout e UX
-- Cabeçalho: Título "HomeHunter" e barra de busca centralizada.
-- Conteúdo: Grid responsivo exibindo cards de imóveis com foto, título e preço.
-- Interação: Busca em tempo real ou ao pressionar "Enter".
+- Formulário de Busca Avançada (colapsável ou no topo):
+  - Campos: Estado, Cidade, Bairro, Tipo, Preço Mín/Máx, Área Mín/Máx, Quartos.
+  - Seleção de Ordenação: Campo para escolher campo (preço, área) e direção (asc, desc).
+- Conteúdo: Grid responsivo exibindo cards de imóveis com detalhes principais.
+- Interação: Botão "Buscar" aplica todos os filtros e ordenação na query da API.
+
 
 ## Configuração Spring Boot
 - Por padrão, o Spring Boot serve arquivos em `src/main/resources/static/`. Não será necessária configuração adicional de `WebMvcConfigurer` a menos que requisitos de roteamento avançado (SPA) surjam.
