@@ -69,10 +69,20 @@ public class PropertyEntity {
     @Column(name = "street")
     private String street;
 
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @BatchSize(size = 50)
-    @Builder.Default
-    private List<PropertySourceEntity> sources = new ArrayList<>();
+    @Column(name = "portal_name", length = 50, nullable = false)
+    private String portalName;
+
+    @Column(name = "external_id", length = 100, nullable = false)
+    private String externalId;
+
+    @Column(name = "url", columnDefinition = "TEXT", nullable = false)
+    private String url;
+
+    @Column(name = "announced_at")
+    private LocalDateTime announcedAt;
+
+    @Column(name = "collected_at", nullable = false)
+    private LocalDateTime collectedAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
