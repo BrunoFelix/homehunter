@@ -34,7 +34,7 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
 ## Layout e UX
 - Formulário de Busca Avançada (colapsável ou no topo):
   - Campos: Estado, Cidade, Bairro, Tipo, Preço Mín/Máx, Área Mín/Máx, Quartos.
-  - Seleção de Ordenação: Campo para escolher campo (preço, área) e direção (asc, desc).
+  - Seleção de Ordenação: Campo para escolher campo (preço, tipo, data de anúncio) e direção (asc, desc).
 - Conteúdo: Grid responsivo exibindo cards de imóveis com detalhes principais.
 - Interação: Botão "Buscar" aplica todos os filtros e ordenação na query da API.
 
