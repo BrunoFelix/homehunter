@@ -178,9 +178,6 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         }
         BigDecimal price = parsePrice(listing);
         String url = wrapper.path("link").path("href").asText(null);
-        if (price != null && url != null && !url.contains(price.toString())) {
-            log.warn("url sem valor");
-        }
         if (title == null || title.isBlank() || price == null || url == null) {
             log.debug("Skipping {} item {} without title, price or URL", config.portalLabel(), id);
             return null;

@@ -17,8 +17,26 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
 3. API retorna JSON.
 4. `app.js` renderiza dados no DOM.
 
-## Tratamento de Erros
-- Exibição de mensagens amigáveis em caso de falha na requisição.
+## Detalhamento da API
+- Endpoint de Busca: `GET /api/properties?search={termo}`
+- Estrutura de Resposta esperada:
+  ```json
+  {
+    "content": [
+      {
+        "id": "...",
+        "title": "...",
+        "price": "..."
+      }
+    ]
+  }
+  ```
 
-## Testes
-- Validação visual manual e testes de unidade para `app.js` se necessário.
+## Layout e UX
+- Cabeçalho: Título "HomeHunter" e barra de busca centralizada.
+- Conteúdo: Grid responsivo exibindo cards de imóveis com foto, título e preço.
+- Interação: Busca em tempo real ou ao pressionar "Enter".
+
+## Configuração Spring Boot
+- Por padrão, o Spring Boot serve arquivos em `src/main/resources/static/`. Não será necessária configuração adicional de `WebMvcConfigurer` a menos que requisitos de roteamento avançado (SPA) surjam.
+
