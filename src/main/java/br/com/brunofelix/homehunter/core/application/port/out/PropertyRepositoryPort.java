@@ -12,5 +12,7 @@ public interface PropertyRepositoryPort {
     Optional<Property> findById(PropertyId id);
     Optional<Property> findBySource(PortalName portalName, String externalId);
     PagedResult<Property> search(PropertySearchCriteria criteria);
+    List<String> findAllStates();
+    List<String> findCitiesByState(String state);
     List<Property> saveAll(List<Property> properties);
 }

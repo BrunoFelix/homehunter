@@ -35,11 +35,23 @@ public class PropertyController {
         this.mapper = mapper;
     }
 
+    @GetMapping("/states")
+    @Operation(summary = "Get all available states")
+    public ResponseEntity<List<String>> getStates() {
+        return ResponseEntity.ok(searchPort.getAllStates());
+    }
+
+    @GetMapping("/cities")
+    @Operation(summary = "Get all available cities for a state")
+    public ResponseEntity<List<String>> getCities(@RequestParam String state) {
+        return ResponseEntity.ok(searchPort.getCitiesByState(state));
+    }
+
     @GetMapping
     @Operation(summary = "Search unified properties with filters and pagination")
     public ResponseEntity<PagedResultDto<PropertyResponseDto>> search(
-            @RequestParam(defaultValue = "PE") String state,
-            @RequestParam(defaultValue = "RECIFE") String city,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String city,
             @RequestParam(required = false) String neighborhood,
             @RequestParam(required = false) PropertyType type,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -48,10 +60,12 @@ public class PropertyController {
             @RequestParam(required = false) Double maxArea,
             @RequestParam(required = false) Integer bedrooms,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
     ) {
+        // ... need to handle sort logic
         PropertySearchCriteria criteria = new PropertySearchCriteria(
-                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, bedrooms, page, size
+                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, bedrooms, page, size, sort
         );
         PagedResult<Property> result = searchPort.search(criteria);
         return ResponseEntity.ok(mapper.toPagedDto(result));

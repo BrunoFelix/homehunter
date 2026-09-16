@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,4 +14,10 @@ public interface SpringDataPropertyRepository extends JpaRepository<PropertyEnti
 
     @Query("select p from PropertyEntity p join p.sources s where s.portalName = :portalName and s.externalId = :externalId")
     Optional<PropertyEntity> findBySource(@Param("portalName") String portalName, @Param("externalId") String externalId);
+
+    @Query("select distinct p.state from PropertyEntity p order by p.state asc")
+    List<String> findAllStates();
+
+    @Query("select distinct p.city from PropertyEntity p where p.state = :state order by p.city asc")
+    List<String> findCitiesByState(@Param("state") String state);
 }

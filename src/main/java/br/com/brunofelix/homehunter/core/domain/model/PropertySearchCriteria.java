@@ -13,14 +13,15 @@ public record PropertySearchCriteria(
         Double maxArea,
         Integer bedrooms,
         int page,
-        int size
+        int size,
+        String sort
 ) {
     public PropertySearchCriteria {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
         if (size > 100) size = 100;
-        state = state != null ? state.trim().toUpperCase() : "PE";
-        city = city != null ? city.trim().toUpperCase() : "RECIFE";
+        state = (state != null && !state.isBlank()) ? state.trim().toUpperCase() : null;
+        city = (city != null && !city.isBlank()) ? city.trim().toUpperCase() : null;
         neighborhood = neighborhood != null ? neighborhood.trim().toUpperCase() : null;
     }
 }

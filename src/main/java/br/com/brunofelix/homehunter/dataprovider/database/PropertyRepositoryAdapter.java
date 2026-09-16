@@ -47,7 +47,14 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Override
     @Transactional(readOnly = true)
     public PagedResult<Property> search(PropertySearchCriteria criteria) {
-        PageRequest pageRequest = PageRequest.of(criteria.page(), criteria.size(), Sort.by("createdAt").descending());
+        Sort sort = Sort.by("createdAt").descending();
+        if (criteria.sort() != null && !criteria.sort().isBlank()) {
+            String[] parts = criteria.sort().split(",");
+            if (parts.length == 2) {
+                sort = Sort.by(Sort.Direction.fromString(parts[1]), parts[0]);
+            }
+        }
+        PageRequest pageRequest = PageRequest.of(criteria.page(), criteria.size(), sort);
 
         Specification<PropertyEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -81,10 +88,23 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
+
         Page<PropertyEntity> page = repository.findAll(spec, pageRequest);
         List<Property> content = page.getContent().stream().map(mapper::toDomain).collect(Collectors.toList());
 
         return new PagedResult<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> findAllStates() {
+        return repository.findAllStates();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> findCitiesByState(String state) {
+        return repository.findCitiesByState(state);
     }
 
     @Override
