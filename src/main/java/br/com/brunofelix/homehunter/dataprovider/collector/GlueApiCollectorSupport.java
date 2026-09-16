@@ -12,11 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import br.com.brunofelix.homehunter.dataprovider.collector.util.DateParser;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,8 +38,6 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
             String fixedParamsBeforePage,
             String includeFieldsSuffix) {
     }
-
-    private static final DateTimeFormatter OFFSET_DATE_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     protected final PortalPropertyNormalizer normalizer;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -301,16 +297,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     }
 
     private LocalDateTime parseDate(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return LocalDateTime.now(ZoneOffset.UTC);
-        }
-        try {
-            return OffsetDateTime.parse(raw, OFFSET_DATE_TIME)
-                    .withOffsetSameInstant(ZoneOffset.UTC)
-                    .toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            return LocalDateTime.now(ZoneOffset.UTC);
-        }
+        return DateParser.parse(raw);
     }
 
     private int declaredTotalPages(JsonNode root) {

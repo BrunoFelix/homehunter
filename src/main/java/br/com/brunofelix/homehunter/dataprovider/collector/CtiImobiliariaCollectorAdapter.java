@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import br.com.brunofelix.homehunter.dataprovider.collector.util.DateParser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,7 +38,6 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
 
     private static final String PAGE_PARAM = "numeropagina=1";
     private static final int ITEMS_PER_PAGE = 20;
-    private static final ZoneId BRAZIL_ZONE = ZoneId.of("America/Recife");
     private static final Pattern FIRST_NUMBER = Pattern.compile("\\d+");
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -295,24 +291,7 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
     }
 
     private LocalDateTime parseDate(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return LocalDateTime.now(ZoneOffset.UTC);
-        }
-        try {
-            return LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    .atZone(BRAZIL_ZONE)
-                    .withZoneSameInstant(ZoneOffset.UTC)
-                    .toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            // try offset form below
-        }
-        try {
-            return OffsetDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                    .withOffsetSameInstant(ZoneOffset.UTC)
-                    .toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            return LocalDateTime.now(ZoneOffset.UTC);
-        }
+        return DateParser.parse(raw);
     }
 
     private int declaredTotalPages(JsonNode root) {

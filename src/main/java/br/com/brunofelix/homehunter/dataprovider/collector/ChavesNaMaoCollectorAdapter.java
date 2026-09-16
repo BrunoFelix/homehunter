@@ -20,10 +20,10 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import br.com.brunofelix.homehunter.dataprovider.collector.util.DateParser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,8 +39,6 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             "level1=casas-a-venda&level2=pe-recife&filtro=cid%3A%5B5302%5D%2Ctim%3A%5B1%5D%2Cpmax%3A500000";
     static final String FIXED_PARAMS_AFTER_PAGE = "quebra=%5B6000%5D&server=0&viewport=desktop";
     static final String SAMPLE_EXTERNAL_ID = "chaves-sample-01";
-
-    private static final ZoneId BRAZIL_ZONE = ZoneId.of("America/Recife");
 
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
