@@ -18,15 +18,28 @@ Arquivos estáticos (HTML, CSS, JS) servidos diretamente pelo Spring Boot (`src/
 4. `app.js` renderiza dados no DOM.
 
 ## Detalhamento da API
-- Endpoint de Busca: `GET /api/properties?search={termo}`
-- Estrutura de Resposta esperada:
+- Endpoint de Busca: `GET /api/v1/properties?search={termo}`
+- Estrutura de Resposta esperada (exemplo):
   ```json
   {
     "content": [
       {
         "id": "...",
         "title": "...",
-        "price": "..."
+        "type": "...",
+        "price": 100000.00,
+        "area": 50.0,
+        "bedrooms": 2,
+        "bathrooms": 1,
+        "suites": 0,
+        "parkingSpaces": 1,
+        "condoFee": 500.00,
+        "iptu": 100.00,
+        "state": "...",
+        "city": "...",
+        "neighborhood": "...",
+        "street": "...",
+        "sources": [...]
       }
     ]
   }
