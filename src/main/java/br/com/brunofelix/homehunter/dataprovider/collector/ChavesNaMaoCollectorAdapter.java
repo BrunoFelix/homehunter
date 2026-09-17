@@ -223,7 +223,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             for (JsonNode picture : pictures) {
                 String imgUrl = picture.path("url").asText(null);
                 if (imgUrl != null && !imgUrl.isBlank()) {
-                    images.add(imgUrl);
+                    images.add(absoluteUrl(imgUrl));
                 }
             }
         }
