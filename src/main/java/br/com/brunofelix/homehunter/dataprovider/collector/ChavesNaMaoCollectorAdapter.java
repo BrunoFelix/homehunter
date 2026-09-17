@@ -218,12 +218,14 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         String neighborhood = valueOr(item.path("location").path("neighborhood").path("name"), null);
         LocalDateTime announcedAt = parseDate(item.path("createdAt").asText(null));
         java.util.List<String> images = new java.util.ArrayList<>();
-        JsonNode pictures = item.path("pictures");
+        JsonNode pictures = item.path("pictures").path("list");
         if (pictures.isArray()) {
             for (JsonNode picture : pictures) {
-                String imgUrl = picture.path("url").asText(null);
+                String imgUrl = picture.asText(null);
                 if (imgUrl != null && !imgUrl.isBlank()) {
-                    images.add(absoluteUrl(imgUrl));
+                    // TODO: Descobrir a CDN correta do Chaves na Mão. 
+                    // Por enquanto, salvando a rota relativa.
+                    images.add(imgUrl); 
                 }
             }
         }
