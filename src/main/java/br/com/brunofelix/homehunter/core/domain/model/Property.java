@@ -105,6 +105,8 @@ public class Property {
         this.area = collected.area();
         this.bedrooms = collected.bedrooms();
         this.address = collected.address();
+        this.images.clear();
+        this.images.addAll(collected.images());
 
         for (int i = 0; i < sources.size(); i++) {
             PropertySource source = sources.get(i);

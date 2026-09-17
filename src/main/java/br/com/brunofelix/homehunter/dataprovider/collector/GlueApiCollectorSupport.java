@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import br.com.brunofelix.homehunter.dataprovider.collector.util.DateParser;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -198,11 +199,12 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         String neighborhood = address.path("neighborhood").asText(null);
         LocalDateTime announcedAt = parseDate(listing.path("createdAt").asText(null));
         java.util.List<String> images = new ArrayList<>();
-        JsonNode medias = listing.path("medias");
+        JsonNode medias = wrapper.path("medias");
         if (medias.isArray()) {
+            String slug = slugify(title);
             for (JsonNode media : medias) {
                 if ("IMAGE".equals(media.path("type").asText())) {
-                    images.add(media.path("url").asText());
+                    images.add(resolveImageUrl(media.path("url").asText(), slug));
                 }
             }
         }
@@ -227,6 +229,28 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 announcedAt,
                 images
         );
+    }
+
+    private String resolveImageUrl(String url, String slug) {
+        if (url == null || url.isBlank() || !url.contains("{")) {
+            return url;
+        }
+        return url
+                .replace("{description}", slug)
+                .replace("{action}", "fit-in")
+                .replace("{width}", "870")
+                .replace("{height}", "707");
+    }
+
+    private String slugify(String title) {
+        if (title == null || title.isBlank()) {
+            return "imovel";
+        }
+        String normalized = Normalizer.normalize(title.toLowerCase(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return normalized.isBlank() ? "imovel" : normalized;
     }
 
     private Integer firstCount(JsonNode node) {

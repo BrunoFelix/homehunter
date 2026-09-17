@@ -20,7 +20,10 @@ public record PropertyResponseDto(
         String city,
         String neighborhood,
         String street,
+        String url,
+        List<String> images,
         List<PropertySourceResponseDto> sources,
+        LocalDateTime announcedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

@@ -47,7 +47,8 @@ class SyncPropertiesUseCaseImplTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        List.of()
                 )
         ));
         deduplicationService = new PropertyDeduplicationService();
@@ -99,7 +100,8 @@ class SyncPropertiesUseCaseImplTest {
                 null,
                 null,
                 LocalDateTime.now(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                List.of()
         );
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
         when(repositoryPort.findBySource(PortalName.ZAP_IMOVEIS, "ext-1")).thenReturn(Optional.of(existing));
@@ -153,7 +155,8 @@ class SyncPropertiesUseCaseImplTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        List.of()
                 ),
                 new CollectedProperty(
                         "Apto Teste (repetido em outra página, fingerprint diferente)",
@@ -170,7 +173,8 @@ class SyncPropertiesUseCaseImplTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        List.of()
                 )
         ));
 

@@ -34,6 +34,8 @@ class ZapImoveisCollectorAdapterTest {
                     + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":410000,\"yearlyIptu\":135,\"monthlyCondoFee\":740}],"
                     + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\","
                     + "\"neighborhood\":\"Boa Viagem\",\"locationId\":\"BR>Pernambuco>NULL>Recife>Barrios>Boa Viagem\"}},"
+                    + "\"medias\":[{\"url\":\"https://resizedimgs.vivareal.com/img/vr-listing/hash-zap-001/{description}.webp?action={action}&dimension={width}x{height}\",\"type\":\"IMAGE\"},"
+                    + "{\"url\":\"https://img.zap.com.br/id-zap-001/img2\",\"type\":\"IMAGE\"}],"
                     + "\"account\":{\"id\":\"br-zap\",\"name\":\"Imob Z\"},"
                     + "\"link\":{\"name\":\"Apartamento com 2 quartos à venda, 55m²\","
                     + "\"href\":\"/imovel/apartamento-2-quartos-boa-viagem-bairros-recife-com-garagem-55m2-venda-RS410000-id-zap-001/\"}}";
@@ -79,6 +81,10 @@ class ZapImoveisCollectorAdapterTest {
         assertEquals("BOA VIAGEM", apto.address().neighborhood());
         assertEquals(LocalDateTime.parse("2026-09-10T19:30:31.897"), apto.announcedAt());
         assertEquals("https://www.zapimoveis.com.br/imovel/apartamento-2-quartos-boa-viagem-bairros-recife-com-garagem-55m2-venda-RS410000-id-zap-001/", apto.url());
+        assertEquals(List.of(
+                        "https://resizedimgs.vivareal.com/img/vr-listing/hash-zap-001/apartamento-com-2-quartos-a-venda-55m.webp?action=fit-in&dimension=870x707",
+                        "https://img.zap.com.br/id-zap-001/img2"),
+                apto.images());
 
         CollectedProperty casa = results.stream()
                 .filter(p -> p.externalId().equals("zap-002"))

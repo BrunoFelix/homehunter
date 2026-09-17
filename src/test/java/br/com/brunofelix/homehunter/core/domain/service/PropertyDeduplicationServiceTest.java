@@ -30,7 +30,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property property = service.deduplicate(Optional.empty(), collected);
@@ -58,7 +59,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
@@ -78,7 +80,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property merged = service.deduplicate(Optional.of(existing), newCollected);
@@ -104,7 +107,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property existing = Property.createFrom(existingCollected, LocalDateTime.now().minusDays(2));
@@ -124,7 +128,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property merged = service.deduplicate(Optional.of(existing), updatedCollected);
@@ -165,7 +170,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 now.minusDays(1),
-                now.minusDays(1)
+                now.minusDays(1),
+                List.of()
         );
 
         CollectedProperty reCollected = new CollectedProperty(
@@ -183,7 +189,8 @@ class PropertyDeduplicationServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         Property merged = service.deduplicate(Optional.of(existing), reCollected);

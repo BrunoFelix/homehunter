@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxPrice = document.getElementById('max-price');
     const sortSelect = document.getElementById('sort-select');
     const sizeSelect = document.getElementById('size-select');
-    const resultsGrid = document.getElementById('results-grid');
+    const typeSelect = document.getElementById('type-select');
+    const resultsGrid = document.querySelector('._card-list');
 
     // Carregar estados
     fetch('/api/v1/properties/states')
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let url = new URL('/api/v1/properties', window.location.origin);
         if (stateSelect.value) url.searchParams.append('state', stateSelect.value);
         if (citySelect.value) url.searchParams.append('city', citySelect.value);
+        if (typeSelect.value) url.searchParams.append('type', typeSelect.value);
         if (minPrice.value) url.searchParams.append('minPrice', minPrice.value);
         if (maxPrice.value) url.searchParams.append('maxPrice', maxPrice.value);
         url.searchParams.append('sort', sortSelect.value);
@@ -51,9 +53,35 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 resultsGrid.innerHTML = '';
                 data.content.forEach(property => {
-                    const card = document.createElement('div');
-                    card.className = 'property-card';
-                    card.innerHTML = `<h3>${property.title}</h3><p>Preço: ${property.price}</p>`;
+                    const card = document.createElement('section');
+                    card.className = '_card';
+                    
+                    const formatPrice = (price) => {
+                        return price >= 1000 ? `R$ ${(price / 1000).toFixed(0)}K` : `R$ ${price}`;
+                    };
+
+                    card.innerHTML = `
+                        <h2 class="_heading | -fluid-text -trim-both">${property.title}</h2>
+                        <p class="_category | -trim-both">${property.type}</p>
+                        <div class="_thumbnail-stack">
+                            ${property.images && property.images.length > 0
+                                ? property.images.slice(0, 9).map(img => `<img src="${img}" alt="${property.title}" width="400" height="400" referrerpolicy="no-referrer" />`).join('')
+                                : "{{Sem Imagem}}"}
+                        </div>
+                        <p class="_price">${formatPrice(property.price)}</p>
+                        <div class="_details">
+                            <p class="_item">Quartos: ${property.bedrooms || '-'}</p>
+                            <p class="_item">Condomínio: ${property.condoFee ? 'R$ ' + property.condoFee : 'N/A'}</p>
+                            <p class="_item">IPTU: ${property.iptu ? 'R$ ' + property.iptu : 'N/A'}</p>
+                        </div>
+                        <div class="_subdetails">
+                            <p class="_description | -line-clamp">${property.neighborhood || ''}</p>
+                            <p class="_description | -line-clamp">Data: ${property.createdAt ? new Date(property.createdAt).toLocaleDateString() : '{{Não informado}}'}</p>
+                        </div>
+                        <div class="_button">
+                            <a href="${property.url}" class="scope purchase-button" target="_blank" rel="noopener">Ver Anúncio</a>
+                        </div>
+                    `;
                     resultsGrid.appendChild(card);
                 });
             })

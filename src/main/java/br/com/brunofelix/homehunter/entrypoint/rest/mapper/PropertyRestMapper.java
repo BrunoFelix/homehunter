@@ -5,8 +5,12 @@ import br.com.brunofelix.homehunter.core.application.model.PagedResult;
 import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
 import br.com.brunofelix.homehunter.core.domain.model.SyncFilterCriteria;
-import br.com.brunofelix.homehunter.entrypoint.rest.dto.*;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.PagedResultDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.PropertyResponseDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.PropertySourceResponseDto;
+import br.com.brunofelix.homehunter.entrypoint.rest.dto.SyncRequestDto;
 import org.springframework.stereotype.Component;
+
 import java.util.stream.Collectors;
 
 @Component
@@ -46,7 +50,10 @@ public class PropertyRestMapper {
                 property.getAddress().city(),
                 property.getAddress().neighborhood(),
                 property.getAddress().street(),
+                property.getSources().isEmpty() ? null : property.getSources().get(0).url(),
+                property.getImages(),
                 sources,
+                property.getSources().getFirst().announcedAt(),
                 property.getCreatedAt(),
                 property.getUpdatedAt()
         );

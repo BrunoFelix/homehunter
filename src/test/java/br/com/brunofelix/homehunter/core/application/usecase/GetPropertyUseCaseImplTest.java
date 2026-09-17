@@ -40,7 +40,8 @@ class GetPropertyUseCaseImplTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        List.of()
                 ),
                 LocalDateTime.now()
         );

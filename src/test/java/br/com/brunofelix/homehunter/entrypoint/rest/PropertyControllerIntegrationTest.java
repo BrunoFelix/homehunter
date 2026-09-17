@@ -79,7 +79,8 @@ class PropertyControllerIntegrationTest {
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        List.of()
                 ),
                 LocalDateTime.now()
         );
@@ -115,8 +116,8 @@ class PropertyControllerIntegrationTest {
         ArgumentCaptor<PropertySearchCriteria> captor =
                 ArgumentCaptor.forClass(PropertySearchCriteria.class);
         verify(searchPort).search(captor.capture());
-        assertEquals("PE", captor.getValue().state());
-        assertEquals("RECIFE", captor.getValue().city());
+        assertNull(captor.getValue().state());
+        assertNull(captor.getValue().city());
         assertNull(captor.getValue().type());
         assertEquals(0, captor.getValue().page());
         assertEquals(20, captor.getValue().size());

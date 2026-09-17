@@ -7,26 +7,51 @@
 </head>
 <body>
     <header>
-        <h1>HomeHunter</h1>
-        <div id="filters">
-            <select id="state-select"><option value="">Todos os Estados</option></select>
-            <select id="city-select"><option value="">Todas as Cidades</option></select>
-            <input type="number" id="min-price" placeholder="Preço Mín">
-            <input type="number" id="max-price" placeholder="Preço Máx">
-            <select id="sort-select">
-                <option value="price,asc">Preço (menor)</option>
-                <option value="price,desc">Preço (maior)</option>
-                <option value="createdAt,desc">Mais recentes</option>
-            </select>
-            <select id="size-select">
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
-            <button id="search-btn">Buscar</button>
+        <div class="scope filter-bar">
+            <div id="filters" class="cluster">
+                <select id="state-select"><option value="">Todos os Estados</option></select>
+                <select id="city-select"><option value="">Todas as Cidades</option></select>
+                <select id="type-select">
+                    <option value="">Todos os Tipos</option>
+                    <option value="APARTMENT">Apartamento</option>
+                    <option value="HOUSE">Casa</option>
+                </select>
+                <input type="number" id="min-price" placeholder="Preço Mín">
+                <input type="number" id="max-price" placeholder="Preço Máx">
+                <select id="sort-select">
+                    <option value="createdAt,desc">Mais recentes</option>
+                    <option value="price,asc">Preço (menor)</option>
+                    <option value="price,desc">Preço (maior)</option>
+                </select>
+                <select id="size-select">
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <button id="search-btn">Buscar</button>
+            </div>
         </div>
     </header>
-    <main id="results-grid"></main>
+    <div class="scope product-cards | -fluid-text">
+  <div class="_card-list | grid" style="
+      --grid--fill-mode: var(--product-cards--fill-mode, auto-fill);
+      --grid--row-gap: var(--product-cards--gap, 1.5rem);
+      --grid--column-gap: var(--product-cards--gap, 1.5rem);
+      --grid--column-max-count: var(--product-cards--column-max-count, 4);
+      --grid--column-min-width: var(--product-cards--column-min-width, 20rem);">
+  </div>
+
+  <!-- `display: none` can cause SVG filters to be ineffective in Firefox. -->
+  <svg width="0" height="0" style="visibility: hidden; position: fixed;">
+    <filter id="svg-inset-shadow">
+      <feOffset in="SourceAlpha" dx="6" dy="8" />
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" />
+      <feComposite in="SourceAlpha" operator="out" />
+      <feBlend in2="SourceGraphic" mode="multiply" />
+    </filter>
+  </svg>
+</div>
+
     <script src="app.js"></script>
 </body>
 </html>
