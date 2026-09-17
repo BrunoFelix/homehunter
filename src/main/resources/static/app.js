@@ -70,13 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <p class="_price">${formatPrice(property.price)}</p>
                         <div class="_details">
-                            <p class="_item">Quartos: ${property.bedrooms || '-'}</p>
-                            <p class="_item">Condomínio: ${property.condoFee ? 'R$ ' + property.condoFee : 'N/A'}</p>
-                            <p class="_item">IPTU: ${property.iptu ? 'R$ ' + property.iptu : 'N/A'}</p>
+                            ${property.bedrooms ? `<p>Quartos: ${property.bedrooms}</p>` : ''}
+                            ${property.condoFee ? `<p>Condomínio: R$ ${property.condoFee}</p>` : ''}
+                            ${property.iptu ? `<p>IPTU: R$ ${property.iptu}</p>` : ''}
+                            ${property.createdAt ? `<p>Anunciado em: ${new Date(property.createdAt).toLocaleDateString()}</p>` : ''}
                         </div>
                         <div class="_subdetails">
-                            <p class="_description | -line-clamp">${property.neighborhood || ''}</p>
-                            <p class="_description | -line-clamp">Data: ${property.createdAt ? new Date(property.createdAt).toLocaleDateString() : '{{Não informado}}'}</p>
+                            <p class="_description | -line-clamp">${property.neighborhood || ''} | Anunciado em: ${property.announcedAt ? new Date(property.announcedAt).toLocaleDateString() : '{{Não informado}}'}</p>
                         </div>
                         <div class="_button">
                             <a href="${property.url}" class="scope purchase-button" target="_blank" rel="noopener">Ver Anúncio</a>
