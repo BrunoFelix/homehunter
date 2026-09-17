@@ -110,8 +110,7 @@ class PropertyControllerIntegrationTest {
                 .andExpect(jsonPath("$.content[0].state", is("PE")))
                 .andExpect(jsonPath("$.content[0].city", is("RECIFE")))
                 .andExpect(jsonPath("$.content[0].neighborhood", is("BOA VIAGEM")))
-                .andExpect(jsonPath("$.content[0].sources", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].sources[0].portalName", is("ZAP_IMOVEIS")));
+                .andExpect(jsonPath("$.content[0].portalName", is("ZAP_IMOVEIS")));
 
         ArgumentCaptor<PropertySearchCriteria> captor =
                 ArgumentCaptor.forClass(PropertySearchCriteria.class);
@@ -200,12 +199,9 @@ class PropertyControllerIntegrationTest {
                 .andExpect(jsonPath("$.title", is("Apartamento Boa Viagem")))
                 .andExpect(jsonPath("$.type", is("APARTAMENTO")))
                 .andExpect(jsonPath("$.price", is(350000)))
-                .andExpect(jsonPath("$.sources", hasSize(1)))
-                .andExpect(jsonPath("$.sources[0].portalName", is("ZAP_IMOVEIS")))
-                .andExpect(jsonPath("$.sources[0].externalId", is("ext-test-001")))
-                .andExpect(jsonPath("$.sources[0].url", is("https://zap.com/001")))
-                .andExpect(jsonPath("$.sources[0].price", is(350000)))
-                .andExpect(jsonPath("$.sources[0].collectedAt", notNullValue()))
+                .andExpect(jsonPath("$.portalName", is("ZAP_IMOVEIS")))
+                .andExpect(jsonPath("$.externalId", is("ext-test-001")))
+                .andExpect(jsonPath("$.url", is("https://zap.com/001")))
                 .andExpect(jsonPath("$.createdAt", notNullValue()))
                 .andExpect(jsonPath("$.updatedAt", notNullValue()));
     }

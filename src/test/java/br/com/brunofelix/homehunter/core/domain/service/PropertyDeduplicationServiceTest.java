@@ -37,8 +37,8 @@ class PropertyDeduplicationServiceTest {
         Property property = service.deduplicate(Optional.empty(), collected);
 
         assertNotNull(property);
-        assertEquals(1, property.getSources().size());
-        assertEquals(PortalName.ZAP_IMOVEIS, property.getSources().get(0).portalName());
+        assertEquals("ext-123", property.getExternalId());
+        assertEquals(PortalName.ZAP_IMOVEIS, property.getPortalName());
         assertEquals(BigDecimal.valueOf(300000), property.getPrice().value());
     }
 
@@ -86,7 +86,7 @@ class PropertyDeduplicationServiceTest {
 
         Property merged = service.deduplicate(Optional.of(existing), newCollected);
 
-        assertEquals(2, merged.getSources().size());
+        assertEquals("viva-456", merged.getExternalId());
         assertEquals(BigDecimal.valueOf(290000), merged.getPrice().value());
     }
 
@@ -134,27 +134,12 @@ class PropertyDeduplicationServiceTest {
 
         Property merged = service.deduplicate(Optional.of(existing), updatedCollected);
 
-        assertEquals(1, merged.getSources().size());
-        assertEquals("https://zap.com/123-v2", merged.getSources().get(0).url());
+        assertEquals("https://zap.com/123-v2", merged.getUrl());
     }
 
     @Test
     void shouldPreserveSourceIdWhenMergingSamePortalAndExternalId() {
         LocalDateTime now = LocalDateTime.now();
-        PropertySource persistedSource = new PropertySource(
-                42L,
-                PortalName.ZAP_IMOVEIS,
-                "zap-sample-01",
-                "https://zap.com/sample",
-                new Price(BigDecimal.valueOf(410000)),
-                null,
-                null,
-                null,
-                null,
-                null,
-                now.minusDays(1),
-                now.minusDays(1)
-        );
         Property existing = new Property(
                 PropertyId.generate("PE", "Recife", "Boa Viagem", PropertyType.APARTAMENTO, 80.0, 3, 1, new BigDecimal("410000")),
                 "Apartamento Exemplo",
@@ -163,7 +148,6 @@ class PropertyDeduplicationServiceTest {
                 new Area(80.0),
                 new Bedrooms(3),
                 new Address("PE", "Recife", "Boa Viagem", null),
-                List.of(persistedSource),
                 null,
                 null,
                 null,
@@ -171,7 +155,12 @@ class PropertyDeduplicationServiceTest {
                 null,
                 now.minusDays(1),
                 now.minusDays(1),
-                List.of()
+                List.of(),
+                PortalName.ZAP_IMOVEIS,
+                "zap-sample-01",
+                "https://zap.com/sample",
+                now.minusDays(1),
+                now.minusDays(1)
         );
 
         CollectedProperty reCollected = new CollectedProperty(
@@ -195,7 +184,6 @@ class PropertyDeduplicationServiceTest {
 
         Property merged = service.deduplicate(Optional.of(existing), reCollected);
 
-        assertEquals(1, merged.getSources().size());
-        assertEquals(42L, merged.getSources().get(0).id());
+        assertEquals("https://zap.com/sample", merged.getUrl());
     }
 }

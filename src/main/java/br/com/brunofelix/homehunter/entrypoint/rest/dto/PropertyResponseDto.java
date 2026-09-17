@@ -22,8 +22,9 @@ public record PropertyResponseDto(
         String street,
         String url,
         List<String> images,
-        List<PropertySourceResponseDto> sources,
         LocalDateTime announcedAt,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String portalName,
+        String externalId
 ) {}

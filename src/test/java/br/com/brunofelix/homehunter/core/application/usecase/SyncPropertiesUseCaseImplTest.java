@@ -80,20 +80,6 @@ class SyncPropertiesUseCaseImplTest {
                 new Area(60.0),
                 new Bedrooms(2),
                 new Address("PE", "Recife", "Boa Viagem", null),
-                List.of(new PropertySource(
-                        42L,
-                        PortalName.ZAP_IMOVEIS,
-                        "ext-1",
-                        "https://zap.com/1",
-                        new Price(BigDecimal.valueOf(200000)),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        LocalDateTime.now(),
-                        LocalDateTime.now()
-                )),
                 null,
                 null,
                 null,
@@ -101,7 +87,12 @@ class SyncPropertiesUseCaseImplTest {
                 null,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
-                List.of()
+                List.of(),
+                PortalName.ZAP_IMOVEIS,
+                "ext-1",
+                "https://zap.com/1",
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
         when(repositoryPort.findById(any())).thenReturn(Optional.empty());
         when(repositoryPort.findBySource(PortalName.ZAP_IMOVEIS, "ext-1")).thenReturn(Optional.of(existing));
@@ -117,7 +108,7 @@ class SyncPropertiesUseCaseImplTest {
         List<Property> saved = captor.getValue();
         assertEquals(1, saved.size());
         assertEquals("old-fingerprint", saved.get(0).getId().value());
-        assertEquals(42L, saved.get(0).getSources().get(0).id());
+        assertEquals("ext-1", saved.get(0).getExternalId());
     }
 
     @Test
@@ -186,7 +177,6 @@ class SyncPropertiesUseCaseImplTest {
         verify(repositoryPort).saveAll(captor.capture());
         List<Property> saved = captor.getValue();
         assertEquals(1, saved.size(), "same portal+externalId repeated in the batch must yield a single property");
-        assertEquals(1, saved.get(0).getSources().size());
-        assertEquals("ext-1", saved.get(0).getSources().get(0).externalId());
+        assertEquals("ext-1", saved.get(0).getExternalId());
     }
 }

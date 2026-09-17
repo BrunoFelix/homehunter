@@ -7,7 +7,6 @@ import br.com.brunofelix.homehunter.core.domain.model.PropertyType;
 import br.com.brunofelix.homehunter.core.domain.model.SyncFilterCriteria;
 import br.com.brunofelix.homehunter.entrypoint.rest.dto.PagedResultDto;
 import br.com.brunofelix.homehunter.entrypoint.rest.dto.PropertyResponseDto;
-import br.com.brunofelix.homehunter.entrypoint.rest.dto.PropertySourceResponseDto;
 import br.com.brunofelix.homehunter.entrypoint.rest.dto.SyncRequestDto;
 import org.springframework.stereotype.Component;
 
@@ -17,23 +16,6 @@ import java.util.stream.Collectors;
 public class PropertyRestMapper {
 
     public PropertyResponseDto toDto(Property property) {
-        var sources = property.getSources().stream()
-                .map(s -> new PropertySourceResponseDto(
-                        s.id(),
-                        s.portalName().name(),
-                        s.externalId(),
-                        s.url(),
-                        s.price().value(),
-                        s.bathrooms(),
-                        s.suites(),
-                        s.parkingSpaces(),
-                        s.condoFee(),
-                        s.iptu(),
-                        s.announcedAt(),
-                        s.collectedAt()
-                ))
-                .collect(Collectors.toList());
-
         return new PropertyResponseDto(
                 property.getId().value(),
                 property.getTitle(),
@@ -50,12 +32,13 @@ public class PropertyRestMapper {
                 property.getAddress().city(),
                 property.getAddress().neighborhood(),
                 property.getAddress().street(),
-                property.getSources().isEmpty() ? null : property.getSources().get(0).url(),
+                property.getUrl(),
                 property.getImages(),
-                sources,
-                property.getSources().getFirst().announcedAt(),
+                property.getAnnouncedAt(),
                 property.getCreatedAt(),
-                property.getUpdatedAt()
+                property.getUpdatedAt(),
+                property.getPortalName().name(),
+                property.getExternalId()
         );
     }
 

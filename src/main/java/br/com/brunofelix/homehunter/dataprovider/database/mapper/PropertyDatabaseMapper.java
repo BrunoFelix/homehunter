@@ -11,9 +11,6 @@ import java.util.stream.Collectors;
 public class PropertyDatabaseMapper {
 
     public PropertyEntity toEntity(Property domain) {
-        // Assume domain.getSources() is not empty and pick the first or most recent one
-        PropertySource source = domain.getSources().get(0);
-
         PropertyEntity entity = PropertyEntity.builder()
                 .id(domain.getId().value())
                 .title(domain.getTitle())
@@ -30,11 +27,11 @@ public class PropertyDatabaseMapper {
                 .city(domain.getAddress().city())
                 .neighborhood(domain.getAddress().neighborhood())
                 .street(domain.getAddress().street())
-                .portalName(source.portalName().name())
-                .externalId(source.externalId())
-                .url(source.url())
-                .announcedAt(source.announcedAt())
-                .collectedAt(source.collectedAt())
+                .portalName(domain.getPortalName().name())
+                .externalId(domain.getExternalId())
+                .url(domain.getUrl())
+                .announcedAt(domain.getAnnouncedAt())
+                .collectedAt(domain.getCollectedAt())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();
@@ -51,21 +48,6 @@ public class PropertyDatabaseMapper {
     }
 
     public Property toDomain(PropertyEntity entity) {
-        PropertySource source = new PropertySource(
-                null,
-                PortalName.valueOf(entity.getPortalName()),
-                entity.getExternalId(),
-                entity.getUrl(),
-                new Price(entity.getPrice()),
-                entity.getBathrooms(),
-                entity.getSuites(),
-                entity.getParkingSpaces(),
-                entity.getCondoFee(),
-                entity.getIptu(),
-                entity.getAnnouncedAt(),
-                entity.getCollectedAt()
-        );
-
         List<String> images = entity.getImages().stream()
                 .map(PropertyImageEntity::getImageUrl)
                 .collect(Collectors.toList());
@@ -78,7 +60,6 @@ public class PropertyDatabaseMapper {
                 new Area(entity.getArea()),
                 new Bedrooms(entity.getBedrooms()),
                 new Address(entity.getState(), entity.getCity(), entity.getNeighborhood(), entity.getStreet()),
-                List.of(source),
                 entity.getBathrooms(),
                 entity.getSuites(),
                 entity.getParkingSpaces(),
@@ -86,7 +67,12 @@ public class PropertyDatabaseMapper {
                 entity.getIptu(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                images
+                images,
+                PortalName.valueOf(entity.getPortalName()),
+                entity.getExternalId(),
+                entity.getUrl(),
+                entity.getAnnouncedAt(),
+                entity.getCollectedAt()
         );
     }
 }

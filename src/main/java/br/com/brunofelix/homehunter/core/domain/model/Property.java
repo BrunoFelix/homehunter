@@ -20,12 +20,18 @@ public class Property {
     private BigDecimal condoFee;
     private BigDecimal iptu;
     private Address address;
-    private final List<PropertySource> sources;
-    private final List<String> images;
-    private final LocalDateTime createdAt;
+    private List<String> images;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, List<PropertySource> sources, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> images) {
+    // Campos anteriormente em PropertySource
+    private PortalName portalName;
+    private String externalId;
+    private String url;
+    private LocalDateTime announcedAt;
+    private LocalDateTime collectedAt;
+
+    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> images, PortalName portalName, String externalId, String url, LocalDateTime announcedAt, LocalDateTime collectedAt) {
         if (id == null) throw new DomainException("PropertyId is required");
         if (title == null || title.isBlank()) throw new DomainException("Title is required");
         if (type == null) throw new DomainException("PropertyType is required");
@@ -33,7 +39,11 @@ public class Property {
         if (area == null) throw new DomainException("Area is required");
         if (bedrooms == null) throw new DomainException("Bedrooms is required");
         if (address == null) throw new DomainException("Address is required");
-        if (sources == null || sources.isEmpty()) throw new DomainException("At least one PropertySource is required");
+        if (portalName == null) throw new DomainException("PortalName is required");
+        if (externalId == null || externalId.isBlank()) throw new DomainException("ExternalId is required");
+        if (url == null || url.isBlank()) throw new DomainException("URL is required");
+        if (price == null) throw new DomainException("Price is required");
+        if (collectedAt == null) throw new DomainException("CollectedAt is required");
 
         this.id = id;
         this.title = title;
@@ -42,7 +52,6 @@ public class Property {
         this.area = area;
         this.bedrooms = bedrooms;
         this.address = address;
-        this.sources = new ArrayList<>(sources);
         this.images = images != null ? new ArrayList<>(images) : new ArrayList<>();
         this.bathrooms = bathrooms;
         this.suites = suites;
@@ -51,6 +60,11 @@ public class Property {
         this.iptu = iptu;
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
         this.updatedAt = updatedAt != null ? updatedAt : LocalDateTime.now();
+        this.portalName = portalName;
+        this.externalId = externalId;
+        this.url = url;
+        this.announcedAt = announcedAt;
+        this.collectedAt = collectedAt;
     }
 
     public static Property createFrom(CollectedProperty collected, LocalDateTime now) {
@@ -65,21 +79,6 @@ public class Property {
                 collected.price().value()
         );
 
-        PropertySource source = new PropertySource(
-                null,
-                collected.portalName(),
-                collected.externalId(),
-                collected.url(),
-                collected.price(),
-                collected.bathrooms(),
-                collected.suites(),
-                collected.parkingSpaces(),
-                collected.condoFee(),
-                collected.iptu(),
-                collected.announcedAt(),
-                now
-        );
-
         return new Property(
                 id,
                 collected.title(),
@@ -88,7 +87,6 @@ public class Property {
                 collected.area(),
                 collected.bedrooms(),
                 collected.address(),
-                List.of(source),
                 collected.bathrooms(),
                 collected.suites(),
                 collected.parkingSpaces(),
@@ -96,7 +94,12 @@ public class Property {
                 collected.iptu(),
                 now,
                 now,
-                collected.images()
+                collected.images(),
+                collected.portalName(),
+                collected.externalId(),
+                collected.url(),
+                collected.announcedAt(),
+                now
         );
     }
 
@@ -107,64 +110,20 @@ public class Property {
         this.address = collected.address();
         this.images.clear();
         this.images.addAll(collected.images());
-
-        for (int i = 0; i < sources.size(); i++) {
-            PropertySource source = sources.get(i);
-            if (source.portalName().equals(collected.portalName()) && source.externalId().equals(collected.externalId())) {
-                sources.set(i, new PropertySource(
-                        source.id(),
-                        collected.portalName(),
-                        collected.externalId(),
-                        collected.url(),
-                        collected.price(),
-                        collected.bathrooms(),
-                        collected.suites(),
-                        collected.parkingSpaces(),
-                        collected.condoFee(),
-                        collected.iptu(),
-                        collected.announcedAt(),
-                        now
-                ));
-                recalculateConsolidatedPrice();
-                this.updatedAt = now;
-                return;
-            }
-        }
-
-        sources.add(new PropertySource(
-                null,
-                collected.portalName(),
-                collected.externalId(),
-                collected.url(),
-                collected.price(),
-                collected.bathrooms(),
-                collected.suites(),
-                collected.parkingSpaces(),
-                collected.condoFee(),
-                collected.iptu(),
-                collected.announcedAt(),
-                now
-        ));
-
-        recalculateConsolidatedPrice();
+        
+        this.price = collected.price();
+        this.bathrooms = collected.bathrooms();
+        this.suites = collected.suites();
+        this.parkingSpaces = collected.parkingSpaces();
+        this.condoFee = collected.condoFee();
+        this.iptu = collected.iptu();
+        
+        this.portalName = collected.portalName();
+        this.externalId = collected.externalId();
+        this.url = collected.url();
+        this.announcedAt = collected.announcedAt();
+        this.collectedAt = now;
         this.updatedAt = now;
-    }
-
-    private void recalculateConsolidatedPrice() {
-        PropertySource winningSource = sources.stream()
-                .min(Comparator
-                        .comparing(PropertySource::collectedAt, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(PropertySource::announcedAt, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(s -> s.price().value())
-                )
-                .orElse(sources.get(0));
-
-        this.price = winningSource.price();
-        this.bathrooms = winningSource.bathrooms();
-        this.suites = winningSource.suites();
-        this.parkingSpaces = winningSource.parkingSpaces();
-        this.condoFee = winningSource.condoFee();
-        this.iptu = winningSource.iptu();
     }
 
     public PropertyId getId() { return id; }
@@ -179,8 +138,12 @@ public class Property {
     public BigDecimal getCondoFee() { return condoFee; }
     public BigDecimal getIptu() { return iptu; }
     public Address getAddress() { return address; }
-    public List<PropertySource> getSources() { return List.copyOf(sources); }
     public List<String> getImages() { return List.copyOf(images); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public PortalName getPortalName() { return portalName; }
+    public String getExternalId() { return externalId; }
+    public String getUrl() { return url; }
+    public LocalDateTime getAnnouncedAt() { return announcedAt; }
+    public LocalDateTime getCollectedAt() { return collectedAt; }
 }
