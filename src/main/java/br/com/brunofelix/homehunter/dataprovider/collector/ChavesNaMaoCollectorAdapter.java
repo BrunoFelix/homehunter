@@ -217,6 +217,16 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
         String city = valueOr(item.path("location").path("city").path("name"), null);
         String neighborhood = valueOr(item.path("location").path("neighborhood").path("name"), null);
         LocalDateTime announcedAt = parseDate(item.path("createdAt").asText(null));
+        java.util.List<String> images = new java.util.ArrayList<>();
+        JsonNode pictures = item.path("pictures");
+        if (pictures.isArray()) {
+            for (JsonNode picture : pictures) {
+                String imgUrl = picture.path("url").asText(null);
+                if (imgUrl != null && !imgUrl.isBlank()) {
+                    images.add(imgUrl);
+                }
+            }
+        }
 
         return normalizer.normalize(
                 title,
@@ -236,7 +246,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 id,
                 absoluteUrl(url),
                 announcedAt,
-                java.util.List.of()
+                images
         );
     }
 
