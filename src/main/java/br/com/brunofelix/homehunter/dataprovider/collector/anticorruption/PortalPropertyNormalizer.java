@@ -4,6 +4,7 @@ import br.com.brunofelix.homehunter.core.domain.model.*;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 public class PortalPropertyNormalizer {
@@ -25,7 +26,8 @@ public class PortalPropertyNormalizer {
             PortalName portalName,
             String externalId,
             String url,
-            LocalDateTime announcedAt
+            LocalDateTime announcedAt,
+            List<String> images
     ) {
         PropertyType type = normalizeType(rawType);
         Price price = new Price(rawPrice != null ? rawPrice : BigDecimal.valueOf(100000));
@@ -53,7 +55,8 @@ public class PortalPropertyNormalizer {
                 rawSuites,
                 rawParkingSpaces,
                 rawCondoFee,
-                rawIptu
+                rawIptu,
+                images != null ? images : java.util.List.of()
         );
     }
 

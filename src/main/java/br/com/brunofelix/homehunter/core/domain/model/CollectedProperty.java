@@ -2,6 +2,7 @@ package br.com.brunofelix.homehunter.core.domain.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record CollectedProperty(
         String title,
@@ -18,5 +19,6 @@ public record CollectedProperty(
         Integer suites,
         Integer parkingSpaces,
         BigDecimal condoFee,
-        BigDecimal iptu
+        BigDecimal iptu,
+        List<String> images
 ) {}

@@ -2,17 +2,19 @@ package br.com.brunofelix.homehunter.dataprovider.database.mapper;
 
 import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
+import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyImageEntity;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class PropertyDatabaseMapper {
 
     public PropertyEntity toEntity(Property domain) {
-        // Pega a primeira fonte como a "principal" para salvar na entidade unificada
+        // Assume domain.getSources() is not empty and pick the first or most recent one
         PropertySource source = domain.getSources().get(0);
 
-        return PropertyEntity.builder()
+        PropertyEntity entity = PropertyEntity.builder()
                 .id(domain.getId().value())
                 .title(domain.getTitle())
                 .type(domain.getType().name())
@@ -36,11 +38,21 @@ public class PropertyDatabaseMapper {
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();
+
+        List<PropertyImageEntity> imageEntities = domain.getImages().stream()
+                .map(url -> PropertyImageEntity.builder()
+                        .property(entity)
+                        .imageUrl(url)
+                        .build())
+                .collect(Collectors.toList());
+
+        entity.setImages(imageEntities);
+        return entity;
     }
 
     public Property toDomain(PropertyEntity entity) {
         PropertySource source = new PropertySource(
-                null, // ID não é usado na entidade unificada para a fonte
+                null,
                 PortalName.valueOf(entity.getPortalName()),
                 entity.getExternalId(),
                 entity.getUrl(),
@@ -53,6 +65,10 @@ public class PropertyDatabaseMapper {
                 entity.getAnnouncedAt(),
                 entity.getCollectedAt()
         );
+
+        List<String> images = entity.getImages().stream()
+                .map(PropertyImageEntity::getImageUrl)
+                .collect(Collectors.toList());
 
         return new Property(
                 new PropertyId(entity.getId()),
@@ -69,7 +85,8 @@ public class PropertyDatabaseMapper {
                 entity.getCondoFee(),
                 entity.getIptu(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                images
         );
     }
 }

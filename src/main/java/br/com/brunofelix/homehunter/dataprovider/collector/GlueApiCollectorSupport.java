@@ -142,7 +142,8 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                     config.portalName(),
                     config.sampleExternalId(),
                     config.webBase() + "/imovel/sample",
-                    LocalDateTime.now(ZoneOffset.UTC)
+                    LocalDateTime.now(ZoneOffset.UTC),
+                    java.util.List.of()
             ));
         }
 
@@ -196,6 +197,15 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         String city = address.path("city").asText(null);
         String neighborhood = address.path("neighborhood").asText(null);
         LocalDateTime announcedAt = parseDate(listing.path("createdAt").asText(null));
+        java.util.List<String> images = new ArrayList<>();
+        JsonNode medias = listing.path("medias");
+        if (medias.isArray()) {
+            for (JsonNode media : medias) {
+                if ("IMAGE".equals(media.path("type").asText())) {
+                    images.add(media.path("url").asText());
+                }
+            }
+        }
 
         return normalizer.normalize(
                 title,
@@ -214,7 +224,8 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                 config.portalName(),
                 id,
                 absoluteUrl(url),
-                announcedAt
+                announcedAt,
+                images
         );
     }
 

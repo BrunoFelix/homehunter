@@ -21,10 +21,11 @@ public class Property {
     private BigDecimal iptu;
     private Address address;
     private final List<PropertySource> sources;
+    private final List<String> images;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, List<PropertySource> sources, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, List<PropertySource> sources, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> images) {
         if (id == null) throw new DomainException("PropertyId is required");
         if (title == null || title.isBlank()) throw new DomainException("Title is required");
         if (type == null) throw new DomainException("PropertyType is required");
@@ -42,6 +43,7 @@ public class Property {
         this.bedrooms = bedrooms;
         this.address = address;
         this.sources = new ArrayList<>(sources);
+        this.images = images != null ? new ArrayList<>(images) : new ArrayList<>();
         this.bathrooms = bathrooms;
         this.suites = suites;
         this.parkingSpaces = parkingSpaces;
@@ -93,7 +95,8 @@ public class Property {
                 collected.condoFee(),
                 collected.iptu(),
                 now,
-                now
+                now,
+                collected.images()
         );
     }
 
@@ -175,6 +178,7 @@ public class Property {
     public BigDecimal getIptu() { return iptu; }
     public Address getAddress() { return address; }
     public List<PropertySource> getSources() { return List.copyOf(sources); }
+    public List<String> getImages() { return List.copyOf(images); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

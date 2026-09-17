@@ -84,6 +84,10 @@ public class PropertyEntity {
     @Column(name = "collected_at", nullable = false)
     private LocalDateTime collectedAt;
 
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<PropertyImageEntity> images = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

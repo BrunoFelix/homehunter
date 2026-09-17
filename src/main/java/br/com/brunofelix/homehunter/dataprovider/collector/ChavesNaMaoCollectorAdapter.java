@@ -171,7 +171,8 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                     PortalName.CHAVES_NA_MAO,
                     SAMPLE_EXTERNAL_ID,
                     baseUrl + "/imovel/sample",
-                    LocalDateTime.now(ZoneOffset.UTC)
+                    LocalDateTime.now(ZoneOffset.UTC),
+                    java.util.List.of()
             ));
         }
 
@@ -234,7 +235,8 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
                 PortalName.CHAVES_NA_MAO,
                 id,
                 absoluteUrl(url),
-                announcedAt
+                announcedAt,
+                java.util.List.of()
         );
     }
 

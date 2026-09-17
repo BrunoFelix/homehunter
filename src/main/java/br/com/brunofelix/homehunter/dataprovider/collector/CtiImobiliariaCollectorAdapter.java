@@ -183,7 +183,8 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
                     PortalName.CTI_IMOBILIARIA,
                     SAMPLE_EXTERNAL_ID,
                     baseUrl + "/imovel/sample",
-                    LocalDateTime.now(ZoneOffset.UTC)
+                    LocalDateTime.now(ZoneOffset.UTC),
+                    java.util.List.of()
             ));
         }
 
@@ -218,6 +219,16 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
         String city = valueOr(item.path("cidade"), null);
         String neighborhood = valueOr(item.path("bairro"), null);
         LocalDateTime announcedAt = parseDate(item.path("datahoracadastro").asText(null));
+        List<String> images = new ArrayList<>();
+        JsonNode fotos = item.path("fotos");
+        if (fotos.isArray()) {
+            for (JsonNode foto : fotos) {
+                String imgUrl = foto.path("url").asText(null);
+                if (imgUrl != null && !imgUrl.isBlank()) {
+                    images.add(imgUrl);
+                }
+            }
+        }
 
         return normalizer.normalize(
                 title,
@@ -236,7 +247,8 @@ public class CtiImobiliariaCollectorAdapter implements PropertyCollectorPort {
                 PortalName.CTI_IMOBILIARIA,
                 id,
                 baseUrl + "/imovel/" + slug + "/" + id,
-                announcedAt
+                announcedAt,
+                images
         );
     }
 
