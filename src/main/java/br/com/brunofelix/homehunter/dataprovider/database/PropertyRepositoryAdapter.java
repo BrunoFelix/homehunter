@@ -47,7 +47,7 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Override
     @Transactional(readOnly = true)
     public PagedResult<Property> search(PropertySearchCriteria criteria) {
-        Sort sort = Sort.by("createdAt").descending();
+        Sort sort = Sort.by("announcedAt").descending();
         if (criteria.sort() != null && !criteria.sort().isBlank()) {
             String[] parts = criteria.sort().split(",");
             if (parts.length == 2) {
@@ -87,7 +87,6 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-
 
         Page<PropertyEntity> page = repository.findAll(spec, pageRequest);
         List<Property> content = page.getContent().stream().map(mapper::toDomain).collect(Collectors.toList());

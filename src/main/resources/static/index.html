@@ -19,7 +19,7 @@
                 <input type="number" id="min-price" placeholder="Preço Mín">
                 <input type="number" id="max-price" placeholder="Preço Máx">
                 <select id="sort-select">
-                    <option value="createdAt,desc">Mais recentes</option>
+                    <option value="announcedAt,desc">Mais recentes</option>
                     <option value="price,asc">Preço (menor)</option>
                     <option value="price,desc">Preço (maior)</option>
                 </select>
@@ -41,6 +41,12 @@
       --grid--column-min-width: var(--product-cards--column-min-width, 20rem);">
   </div>
 
+  <div id="pagination-controls" class="cluster" style="justify-content: center; margin-top: 2rem; display: none;">
+      <button id="prev-page">Anterior</button>
+      <span id="page-info"></span>
+      <button id="next-page">Próximo</button>
+  </div>
+
   <!-- `display: none` can cause SVG filters to be ineffective in Firefox. -->
   <svg width="0" height="0" style="visibility: hidden; position: fixed;">
     <filter id="svg-inset-shadow">
@@ -53,5 +59,14 @@
 </div>
 
     <script src="app.js"></script>
+    <div id="image-modal" style="display:none;">
+        <button id="close-modal">&times;</button>
+        <div id="image-counter"></div>
+        <div class="modal-content">
+            <button id="prev-img">❮</button>
+            <img id="modal-img" src="" alt="Ampliada">
+            <button id="next-img">❯</button>
+        </div>
+    </div>
 </body>
 </html>

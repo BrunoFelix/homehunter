@@ -104,7 +104,7 @@
     ._thumbnail-stack {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 0.5rem;
+      gap: 1rem;
 
       & > img {
         inline-size: 100%;
@@ -465,4 +465,64 @@
   syntax: "<url>";
   inherits: false;
   initial-value: url('data:image/svg+xml,<svg viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg"><path fill="red" d="M0 24C0 10.7 10.7 0 24 0L69.5 0c22 0 41.5 12.8 50.6 32l411 0c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3l-288.5 0 5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5L488 336c13.3 0 24 10.7 24 24s-10.7 24-24 24l-288.3 0c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5L24 48C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z" /></svg>');
+}
+
+#image-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(0,0,0,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.modal-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#modal-img {
+    max-width: 80%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+#close-modal {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    background: none;
+    border: none;
+    font-size: 40px;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+#image-counter {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    color: white;
+    font-size: 20px;
+    z-index: 1001;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+#prev-img, #next-img {
+    color: white;
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    padding: 20px;
+    z-index: 1001;
 }
