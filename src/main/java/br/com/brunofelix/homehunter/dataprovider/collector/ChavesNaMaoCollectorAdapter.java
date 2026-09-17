@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
 
     static final String DEFAULT_BASE_URL = "https://www.chavesnamao.com.br";
+    static final String IMAGE_CDN_BASE_URL = "https://www.chavesnamao.com.br/imn/1200x0800/N/75/imoveis/";
     static final String DEFAULT_LISTING_PATH = "/api/realestate/listing/items/";
     static final String FIXED_PARAMS_BEFORE_PAGE =
             "level1=casas-a-venda&level2=pe-recife&filtro=cid%3A%5B5302%5D%2Ctim%3A%5B1%5D%2Cpmax%3A500000";
@@ -223,9 +224,7 @@ public class ChavesNaMaoCollectorAdapter implements PropertyCollectorPort {
             for (JsonNode picture : pictures) {
                 String imgUrl = picture.asText(null);
                 if (imgUrl != null && !imgUrl.isBlank()) {
-                    // TODO: Descobrir a CDN correta do Chaves na Mão. 
-                    // Por enquanto, salvando a rota relativa.
-                    images.add(imgUrl); 
+                    images.add(IMAGE_CDN_BASE_URL + imgUrl);
                 }
             }
         }
