@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface SpringDataPropertyRepository extends JpaRepository<PropertyEntity, String>, JpaSpecificationExecutor<PropertyEntity> {
 
-    @Query("select p from PropertyEntity p join p.sources s where s.portalName = :portalName and s.externalId = :externalId")
+    @Query("select p from PropertyEntity p where p.portalName = :portalName and p.externalId = :externalId")
     Optional<PropertyEntity> findBySource(@Param("portalName") String portalName, @Param("externalId") String externalId);
 
     @Query("select distinct p.state from PropertyEntity p order by p.state asc")
