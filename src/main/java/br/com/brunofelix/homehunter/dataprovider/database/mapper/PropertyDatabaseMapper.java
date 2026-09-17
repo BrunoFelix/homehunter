@@ -3,13 +3,14 @@ package br.com.brunofelix.homehunter.dataprovider.database.mapper;
 import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class PropertyDatabaseMapper {
 
     public PropertyEntity toEntity(Property domain) {
-        // Assume domain.getSources() is not empty and pick the first or most recent one
-        CollectedProperty source = domain.getSources().get(0); 
+        // Pega a primeira fonte como a "principal" para salvar na entidade unificada
+        PropertySource source = domain.getSources().get(0);
 
         return PropertyEntity.builder()
                 .id(domain.getId().value())
@@ -39,6 +40,7 @@ public class PropertyDatabaseMapper {
 
     public Property toDomain(PropertyEntity entity) {
         PropertySource source = new PropertySource(
+                null, // ID não é usado na entidade unificada para a fonte
                 PortalName.valueOf(entity.getPortalName()),
                 entity.getExternalId(),
                 entity.getUrl(),
