@@ -26,6 +26,7 @@
       --_has-hocus-on: ;
       --_has-hocus-off: initial;
 
+      position: relative;
       display: block grid;
       reading-flow: grid-rows;
       grid-template-columns:
@@ -83,21 +84,27 @@
       }
     }
 
+    ._badge-new {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: #e1e103;
+      color: var(--_accent-contrast);
+      padding: 8px 20px;
+      border-radius: calc(infinity * 1px);
+      font-weight: bold;
+      font-size: 0.75rem;
+      z-index: 2;
+    }
+
     ._details {
+      text-align: center;
       display: block;
 
       & > ._item {
         grid-column: --item;
         place-self: center end;
         display: inline-block;
-      }
-    }
-
-    ._subdetails {
-      display: flex;
-
-      & > ._description {
-        width: 100%;
       }
     }
 
@@ -525,4 +532,8 @@
     cursor: pointer;
     padding: 20px;
     z-index: 1001;
+}
+
+body {
+    background: #f2f2f2;
 }

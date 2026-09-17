@@ -104,7 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         return price >= 1000 ? `R$ ${(price / 1000).toFixed(0)}K` : `R$ ${price}`;
                     };
 
+                    const isNew = property.announcedAt && (new Date() - new Date(property.announcedAt)) < (30 * 60 * 1000);
+
                     card.innerHTML = `
+                        ${isNew ? '<span class="_badge-new">Novo!</span>' : ''}
                         <h2 class="_heading | -fluid-text -trim-both">${property.title}</h2>
                         <p class="_category | -trim-both">${property.type}</p>
                         <div class="_thumbnail-stack" style="cursor: pointer;">
@@ -117,17 +120,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p>
                                 ${property.bedrooms ? `Quartos: ${property.bedrooms}` : ''}
                                 ${property.bathrooms ? ` | Banheiros: ${property.bathrooms}` : ''}
-                                ${property.condoFee ? ` | Condomínio: R$ ${property.condoFee}` : ''}
+                            </p>
+                            <p>
+                                ${property.condoFee ? `Condomínio: R$ ${property.condoFee}` : ''}
                                 ${property.iptu ? ` | IPTU: R$ ${property.iptu}` : ''}
                             </p>
-                        </div>
-                        <div class="_subdetails">
-                            <p class="_description | -line-clamp">${property.neighborhood || ''} | Anunciado em: ${property.announcedAt ? new Date(property.announcedAt).toLocaleDateString() : '{{Não informado}}'}</p>
+                            <p class="_description | -line-clamp">${property.state || ''} | ${property.city || ''} | ${property.neighborhood || ''}</p>
+                            <p class="_description | -line-clamp">Anunciado em: ${property.announcedAt ? new Date(property.announcedAt).toLocaleDateString() : '{{Não informado}}'}</p>
                         </div>
                         <div class="_button">
                             <a href="${property.url}" class="scope purchase-button" target="_blank" rel="noopener">Ver Anúncio</a>
                         </div>
                     `;
+
                     
                     if (property.images && property.images.length > 0) {
                         const thumbnailStack = card.querySelector('._thumbnail-stack');
