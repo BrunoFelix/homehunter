@@ -20,4 +20,7 @@ public interface SpringDataPropertyRepository extends JpaRepository<PropertyEnti
 
     @Query("select distinct p.city from PropertyEntity p where p.state = :state order by p.city asc")
     List<String> findCitiesByState(@Param("state") String state);
+
+    @Query("select p from PropertyEntity p where p.state = :state and p.city = :city and p.neighborhood = :neighborhood")
+    List<PropertyEntity> findByNeighborhood(@Param("state") String state, @Param("city") String city, @Param("neighborhood") String neighborhood);
 }

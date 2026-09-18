@@ -26,5 +26,6 @@ public record PropertyResponseDto(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String portalName,
-        String externalId
+        String externalId,
+        Integer score
 ) {}

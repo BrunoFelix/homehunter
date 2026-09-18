@@ -82,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function fetchProperties(page = 0) {
         currentPage = page;
+
+        // Show loading
+        resultsGrid.innerHTML = '<div class="loading-spinner"></div>';
+
         let url = new URL('/api/v1/properties', window.location.origin);
         if (stateSelect.value) url.searchParams.append('state', stateSelect.value);
         if (citySelect.value) url.searchParams.append('city', citySelect.value);
@@ -96,24 +100,28 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(data => {
                 resultsGrid.innerHTML = '';
+
                 data.content.forEach(property => {
                     const card = document.createElement('section');
                     card.className = '_card';
-                    
+
                     const formatPrice = (price) => {
                         return price >= 1000 ? `R$ ${(price / 1000).toFixed(0)}K` : `R$ ${price}`;
                     };
 
                     const isNew = property.announcedAt && (new Date() - new Date(property.announcedAt)) < (30 * 60 * 1000);
 
+                    // Add loading indicator for images
+                    const imagesHtml = property.images && property.images.length > 0
+                        ? property.images.slice(0, 4).map(img => `<img src="${img}" alt="${property.title}" width="400" height="400" referrerpolicy="no-referrer" onload="this.style.background='none'" />`).join('')
+                        : "{{Sem Imagem}}";
+
                     card.innerHTML = `
-                        ${isNew ? '<span class="_badge-new">Novo!</span>' : ''}
+                        <span class="_badge-ratio">Nota: ${property.score}</span>
                         <h2 class="_heading | -fluid-text -trim-both">${property.title}</h2>
-                        <p class="_category | -trim-both">${property.type}</p>
+                        <p class="_category | -trim-both">${property.type == 'APARTAMENTO' ? 'APTO' : property.type} - ${property.area}m² ${isNew ? '- **Novo!**' : ''}</p>
                         <div class="_thumbnail-stack" style="cursor: pointer;">
-                            ${property.images && property.images.length > 0
-                                ? property.images.slice(0, 4).map(img => `<img src="${img}" alt="${property.title}" width="400" height="400" referrerpolicy="no-referrer" />`).join('')
-                                : "{{Sem Imagem}}"}
+                            ${imagesHtml}
                         </div>
                         <p class="_price">${formatPrice(property.price)}</p>
                         <div class="_details">
@@ -126,14 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${property.iptu ? ` | IPTU: R$ ${property.iptu}` : ''}
                             </p>
                             <p class="_description | -line-clamp">${property.state || ''} | ${property.city || ''} | ${property.neighborhood || ''}</p>
-                            <p class="_description | -line-clamp">Anunciado em: ${property.announcedAt ? new Date(property.announcedAt).toLocaleDateString() : '{{Não informado}}'}</p>
                         </div>
                         <div class="_button">
                             <a href="${property.url}" class="scope purchase-button" target="_blank" rel="noopener">Ver Anúncio</a>
                         </div>
+                        <div class="_details">
+                            <p class="_description | -line-clamp">Anunciado: ${property.announcedAt ? new Date(property.announcedAt).toLocaleDateString() : '{{Não informado}}'}</p>
+                        </div>
                     `;
 
-                    
                     if (property.images && property.images.length > 0) {
                         const thumbnailStack = card.querySelector('._thumbnail-stack');
                         thumbnailStack.addEventListener('click', (e) => {
@@ -153,7 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 prevPageBtn.disabled = currentPage === 0;
                 nextPageBtn.disabled = currentPage >= totalPages - 1;
             })
-            .catch(err => console.error('Erro na busca:', err));
+            .catch(err => {
+                console.error('Erro na busca:', err);
+                resultsGrid.innerHTML = '<p>Erro ao carregar propriedades.</p>';
+            });
     }
 
     // ... (modal logic acima) ...
@@ -172,10 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     init();
-    document.addEventListener('DOMContentLoaded', () => {
-        init();
-        // ... carregar estados ...
-    });
 
     prevPageBtn.addEventListener('click', () => { if (currentPage > 0) fetchProperties(currentPage - 1); });
     nextPageBtn.addEventListener('click', () => { if (currentPage < totalPages - 1) fetchProperties(currentPage + 1); });

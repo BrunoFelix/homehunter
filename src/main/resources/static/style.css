@@ -43,6 +43,15 @@
       background-color: var(--card-background);
       color: var(--card-foreground);
       zoom: min(progress(100cqi, 0px, 320 / 16 * 1rem), 1);
+      transition: all .3s;
+
+      &:has(:hover) {
+        transform: scale(1.01);
+      }
+
+      &:has(:hover) {
+        box-shadow: 0px 0px 30px 1px rgba(195, 74, 54, 0.30);
+      }
 
       &:has(:any-link:hover) {
         @media (any-hover) {
@@ -84,16 +93,25 @@
       }
     }
 
-    ._badge-new {
+    ._score-badge {
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 5px;
+      display: inline-block;
+      background-color: #4a90e2; /* Cor padrão, pode ser dinâmica */
+    }
+    ._badge-ratio {
       position: absolute;
       top: 15px;
-      right: 15px;
-      background-color: #e1e103;
+      right: 0;
+      margin: 0px;
       color: var(--_accent-contrast);
       padding: 8px 20px;
       border-radius: calc(infinity * 1px);
       font-weight: bold;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       z-index: 2;
     }
 
@@ -122,6 +140,7 @@
       aspect-ratio: 1;
       border-radius: var(--_inner-radius);
       filter: url(#svg-inset-shadow);
+      background-color: #eee; /* Placeholder */
     }
 
     ._heading {
@@ -196,7 +215,7 @@
 
   @scope (.scope.purchase-button) to (.scope) {
     :scope {
-      --_background: var(--purchase-button--background, var(--color-darker));
+      --_background: var(--purchase-button--background, var(--_accent));
       --_backgorund-hocus: oklch(from var(--_background) 60% 60% h);
       --_foreground: var(--purchase-button--foreground, var(--color-lightest));
       --_foreground-hocus: oklch(
@@ -255,12 +274,13 @@
       border-radius: calc(infinity * 1px);
       background-color: var(--color-lightest);
       color: var(--color-darkest);
+      cursor: pointer;
     }
 
-    #filters button {
+    #filters #search-btn {
+      padding: 0.5rem 0.7rem;
       background-color: var(--color-darkest);
       color: var(--color-lightest);
-      cursor: pointer;
       font-weight: bold;
     }
   }
@@ -354,6 +374,21 @@
     @supports not (overflow-block: clip) {
       overflow-y: clip;
     }
+  }
+
+  .loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #4a90e2;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 }
 

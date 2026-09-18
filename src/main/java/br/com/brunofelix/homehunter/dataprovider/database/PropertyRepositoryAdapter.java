@@ -6,6 +6,7 @@ import br.com.brunofelix.homehunter.core.domain.model.Property;
 import br.com.brunofelix.homehunter.core.domain.model.PropertyId;
 import br.com.brunofelix.homehunter.core.domain.model.PropertySearchCriteria;
 import br.com.brunofelix.homehunter.core.domain.model.PortalName;
+import br.com.brunofelix.homehunter.core.domain.model.PropertyStats;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
 import br.com.brunofelix.homehunter.dataprovider.database.mapper.PropertyDatabaseMapper;
 import br.com.brunofelix.homehunter.dataprovider.database.repository.SpringDataPropertyRepository;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @Component
 public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
@@ -104,6 +106,36 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Transactional(readOnly = true)
     public List<String> findCitiesByState(String state) {
         return repository.findCitiesByState(state);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PropertyStats findStatsByNeighborhood(String state, String city, String neighborhood) {
+        List<PropertyEntity> props = repository.findByNeighborhood(state, city, neighborhood);
+        if (props.isEmpty()) {
+            return new PropertyStats(new BigDecimal("10000"), new BigDecimal("100"));
+        }
+        
+        double sumPricePerSqm = 0;
+        double sumCondoPerSqm = 0;
+        int count = 0;
+        
+        for (PropertyEntity p : props) {
+            if (p.getArea() != null && p.getArea() > 0) {
+                sumPricePerSqm += p.getPrice().doubleValue() / p.getArea();
+                if (p.getCondoFee() != null) {
+                    sumCondoPerSqm += p.getCondoFee().doubleValue() / p.getArea();
+                }
+                count++;
+            }
+        }
+        
+        if (count == 0) return new PropertyStats(new BigDecimal("10000"), new BigDecimal("100"));
+        
+        return new PropertyStats(
+            BigDecimal.valueOf(sumPricePerSqm / count),
+            BigDecimal.valueOf(sumCondoPerSqm / count)
+        );
     }
 
     @Override
