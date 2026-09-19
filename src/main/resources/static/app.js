@@ -126,12 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="_price">${formatPrice(property.price)}</p>
                         <div class="_details">
                             <p>
-                                ${property.bedrooms ? `Quartos: ${property.bedrooms}` : ''}
+                                ${property.area ? `${property.area}m²` : ''}
+                                ${property.bedrooms ? `| Quartos: ${property.bedrooms}` : ''}
                                 ${property.bathrooms ? ` | Banheiros: ${property.bathrooms}` : ''}
                             </p>
                             <p>
-                                ${property.condoFee ? `Condomínio: R$ ${property.condoFee}` : ''}
-                                ${property.iptu ? ` | IPTU: R$ ${property.iptu}` : ''}
+                                ${property.condoFee && property.condoFee > 1 ? `Condomínio: R$ ${property.condoFee}` : ''}
+                                ${property.iptu && property.iptu > 1 ? ` | IPTU: R$ ${property.iptu}` : ''}
                             </p>
                             <p class="_description | -line-clamp">${property.state || ''} | ${property.city || ''} | ${property.neighborhood || ''}</p>
                         </div>
