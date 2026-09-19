@@ -21,6 +21,7 @@ class VivaRealCollectorAdapterTest {
 
     private static final Pattern PAGE_PARAM = Pattern.compile("[?&]page=(\\d+)");
     private static final Pattern FROM_PARAM = Pattern.compile("[?&]from=(\\d+)");
+    private static final Pattern CITY_PARAM = Pattern.compile("[?&]addressCity=([^&]+)");
 
     private static final String API_URL = "https://glue-api.vivareal.com/v4/listings";
 
@@ -187,21 +188,34 @@ class VivaRealCollectorAdapterTest {
     }
 
     @Test
+    void shouldCollectFromMultipleCities() {
+        List<String> urls = new ArrayList<>();
+        VivaRealCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(10, APTO)));
+
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE", "JABOATAO"), null));
+
+        assertEquals(2, results.size());
+
+        assertTrue(urls.stream().anyMatch(u -> u.contains("addressCity=RECIFE")), "expected a RECIFE request: " + urls);
+        assertTrue(urls.stream().anyMatch(u -> u.contains("addressCity=JABOATAO")), "expected a JABOATAO request: " + urls);
+    }
+
+    @Test
     void buildUrlShouldExposeApiContract() {
         VivaRealCollectorAdapter adapter = new VivaRealCollectorAdapter(
                 new PortalPropertyNormalizer(), API_URL, url -> GlueApiCollectorSupport.CurlResult.failure());
 
         for (int page = 1; page <= 3; page++) {
-            String url = adapter.buildUrl(page);
-            assertValidApiUrl(url, page);
+            String url = adapter.buildUrl(page, "RECIFE");
+            assertValidApiUrl(url, page, "addressCity=RECIFE");
         }
     }
 
-    private static void assertValidApiUrl(String url, int page) {
+    private static void assertValidApiUrl(String url, int page, String cityFragment) {
         assertTrue(url.startsWith(API_URL + "?"), "expected base + query in: " + url);
         assertTrue(url.contains("categoryPage=RESULT"), "expected categoryPage in: " + url);
         assertTrue(url.contains("business=SALE"), "expected business in: " + url);
-        assertTrue(url.contains("addressCity=Recife"), "expected addressCity in: " + url);
+        assertTrue(url.contains(cityFragment), "expected " + cityFragment + " in: " + url);
         assertTrue(url.contains("addressState=Pernambuco"), "expected addressState in: " + url);
         assertTrue(url.contains("unitTypes=APARTMENT"), "expected unitTypes in: " + url);
         assertTrue(url.contains("__id=search"), "expected __id in: " + url);
@@ -229,11 +243,20 @@ class VivaRealCollectorAdapterTest {
 
     private static VivaRealCollectorAdapter adapterWith(List<String> urls, Function<Integer, GlueApiCollectorSupport.CurlResult> handler) {
         GlueApiCollectorSupport.CurlRunner runner = url -> {
-            assertValidApiUrl(url, pageOf(url));
+            String city = cityOf(url);
+            assertValidApiUrl(url, pageOf(url), "addressCity=" + city);
             urls.add(url);
             return handler.apply(pageOf(url));
         };
         return new VivaRealCollectorAdapter(new PortalPropertyNormalizer(), API_URL, runner);
+    }
+
+    private static String cityOf(String url) {
+        Matcher cm = CITY_PARAM.matcher(url);
+        if (!cm.find()) {
+            throw new IllegalArgumentException("no addressCity param in: " + url);
+        }
+        return cm.group(1);
     }
 
     private static int pageOf(String url) {

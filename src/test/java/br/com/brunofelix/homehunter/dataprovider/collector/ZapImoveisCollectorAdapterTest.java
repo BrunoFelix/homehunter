@@ -22,6 +22,7 @@ class ZapImoveisCollectorAdapterTest {
 
     private static final Pattern PAGE_PARAM = Pattern.compile("[?&]page=(\\d+)");
     private static final Pattern FROM_PARAM = Pattern.compile("[?&]from=(\\d+)");
+    private static final Pattern CITY_PARAM = Pattern.compile("[?&]addressCity=([^&]+)");
 
     private static final String API_URL = "https://glue-api.zapimoveis.com.br/v4/listings";
 
@@ -151,7 +152,7 @@ class ZapImoveisCollectorAdapterTest {
     void shouldPauseAtBatchBoundary() {
         List<String> urls = new ArrayList<>();
         GlueApiCollectorSupport.CurlRunner runner = url -> {
-            assertValidZapApiUrl(url, pageOf(url));
+            assertValidZapApiUrl(url, pageOf(url), "addressCity=" + cityOf(url));
             urls.add(url);
             return jsonResult(listingPage(605, APTO));
         };
@@ -171,7 +172,7 @@ class ZapImoveisCollectorAdapterTest {
     void shouldApplyPolitenessDelayPerPage() {
         List<String> urls = new ArrayList<>();
         GlueApiCollectorSupport.CurlRunner runner = url -> {
-            assertValidZapApiUrl(url, pageOf(url));
+            assertValidZapApiUrl(url, pageOf(url), "addressCity=" + cityOf(url));
             urls.add(url);
             return jsonResult(listingPage(90, APTO));
         };
@@ -212,21 +213,56 @@ class ZapImoveisCollectorAdapterTest {
     }
 
     @Test
+    void shouldCollectFromMultipleCities() {
+        List<String> urls = new ArrayList<>();
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> jsonResult(listingPage(10, APTO)));
+
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE", "JABOATAO"), null));
+
+        assertEquals(2, results.size());
+        
+        // Verifica se ambas as cidades foram requisitadas
+        assertTrue(urls.stream().anyMatch(u -> u.contains("addressCity=RECIFE")));
+        assertTrue(urls.stream().anyMatch(u -> u.contains("addressCity=JABOATAO")));
+    }
+
+    @Test
+    void shouldParseQuotedPriceAsNumber() {
+        List<String> urls = new ArrayList<>();
+        String quotedPrice = "{\"listing\":{\"id\":\"zap-quoted\",\"title\":\"Apartamento com preço textual\","
+                + "\"createdAt\":\"2026-09-10T19:30:31.897+00:00\","
+                + "\"unitTypes\":[\"APARTMENT\"],\"propertyType\":\"UNIT\","
+                + "\"pricingInfos\":[{\"businessType\":\"SALE\",\"price\":\"585000\"}],"
+                + "\"address\":{\"state\":\"Pernambuco\",\"stateAcronym\":\"PE\",\"city\":\"Recife\",\"neighborhood\":\"Casa Forte\"}},"
+                + "\"link\":{\"name\":\"Apartamento com preço textual\","
+                + "\"href\":\"/imovel/apartamento-preco-textual-id-zap-quoted/\"}}";
+        ZapImoveisCollectorAdapter adapter = adapterWith(urls, pg -> pg == 1
+                ? jsonResult(listingPage(1, quotedPrice))
+                : jsonResult(emptyPage()));
+
+        List<CollectedProperty> results = adapter.collect(new CollectionScope("PE", List.of("RECIFE"), null));
+
+        assertEquals(1, results.size());
+        assertEquals("zap-quoted", results.get(0).externalId());
+        assertEquals(585000, results.get(0).price().value().intValue());
+    }
+
+    @Test
     void buildUrlShouldExposeApiContract() {
         ZapImoveisCollectorAdapter adapter = new ZapImoveisCollectorAdapter(
                 new PortalPropertyNormalizer(), API_URL, url -> GlueApiCollectorSupport.CurlResult.failure());
 
         for (int page = 1; page <= 3; page++) {
-            String url = adapter.buildUrl(page);
-            assertValidZapApiUrl(url, page);
+            String url = adapter.buildUrl(page, "RECIFE");
+            assertValidZapApiUrl(url, page, "addressCity=RECIFE");
         }
     }
 
-    private static void assertValidZapApiUrl(String url, int page) {
+    private static void assertValidZapApiUrl(String url, int page, String cityFragment) {
         assertTrue(url.startsWith(API_URL + "?"), "expected base + query in: " + url);
         assertTrue(url.contains("categoryPage=RESULT"), "expected categoryPage in: " + url);
         assertTrue(url.contains("business=SALE"), "expected business in: " + url);
-        assertTrue(url.contains("addressCity=Recife"), "expected addressCity in: " + url);
+        assertTrue(url.contains(cityFragment), "expected " + cityFragment + " in: " + url);
         assertTrue(url.contains("addressState=Pernambuco"), "expected addressState in: " + url);
         assertTrue(url.contains("user=ba1dea62-766d-40c1-be67-2ee852f4e384"), "expected zapimoveis user token in: " + url);
         assertTrue(url.contains("unitTypes=HOME%2CAPARTMENT"), "expected HOME+APARTMENT unit types in: " + url);
@@ -257,11 +293,20 @@ class ZapImoveisCollectorAdapterTest {
 
     private static ZapImoveisCollectorAdapter adapterWith(List<String> urls, Function<Integer, GlueApiCollectorSupport.CurlResult> handler) {
         GlueApiCollectorSupport.CurlRunner runner = url -> {
-            assertValidZapApiUrl(url, pageOf(url));
+            String city = cityOf(url);
+            assertValidZapApiUrl(url, pageOf(url), "addressCity=" + city);
             urls.add(url);
             return handler.apply(pageOf(url));
         };
         return new ZapImoveisCollectorAdapter(new PortalPropertyNormalizer(), API_URL, runner);
+    }
+
+    private static String cityOf(String url) {
+        Matcher cm = CITY_PARAM.matcher(url);
+        if (!cm.find()) {
+            throw new IllegalArgumentException("no addressCity param in: " + url);
+        }
+        return cm.group(1);
     }
 
     private static int pageOf(String url) {

@@ -14,15 +14,15 @@ import java.time.Duration;
 @Component
 public class ZapImoveisCollectorAdapter extends GlueApiCollectorSupport {
 
-static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/listings";
+    static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/listings";
 
-    private static final String FIXED_PARAMS_BEFORE_PAGE =
+    private static final String FIXED_PARAMS_TEMPLATE =
             "?categoryPage=RESULT&business=SALE&parentId=null&listingType=USED&images=webp"
                     + "&user=ba1dea62-766d-40c1-be67-2ee852f4e384&portal=ZAP"
                     + "&__zt=mtc%3Adeduplication2023"
                     + "&priceMax=500000"
-                    + "&addressCity=Recife&addressZone=&addressStreet="
-                    + "&addressLocationId=BR%3EPernambuco%3ENULL%3ERecife"
+                    + "&addressCity=%s&addressZone=&addressStreet="
+                    + "&addressLocationId=BR%3EPernambuco%3ENULL%3E%s"
                     + "&addressState=Pernambuco&addressNeighborhood="
                     + "&addressPointLat=-8.05774&addressPointLon=-34.882963"
                     + "&addressType=city&unitTypes=HOME%2CAPARTMENT&unitTypesV3=HOME%2CAPARTMENT"
@@ -69,7 +69,7 @@ static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/lis
             BigDecimal.valueOf(410000),
             80.0,
             3,
-            FIXED_PARAMS_BEFORE_PAGE,
+            FIXED_PARAMS_TEMPLATE,
             INCLUDE_FIELDS_SUFFIX
     );
 
@@ -96,5 +96,16 @@ static final String DEFAULT_API_URL = "https://glue-api.zapimoveis.com.br/v4/lis
 
     ZapImoveisCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages, Throttle throttle) {
         super(normalizer, apiUrl, curlRunner, ZAP_CONFIG, maxPages, throttle);
+    }
+
+    @Override
+    protected String buildUrl(int page, String city) {
+        String formattedCity = city.replaceAll(" ", "+");
+        String params = FIXED_PARAMS_TEMPLATE.replace("%s", formattedCity);
+        return DEFAULT_API_URL + params
+                + "&page=" + page
+                + "&size=" + PAGE_SIZE
+                + "&from=" + ((page - 1) * PAGE_SIZE)
+                + INCLUDE_FIELDS_SUFFIX;
     }
 }

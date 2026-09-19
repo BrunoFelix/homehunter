@@ -3,6 +3,7 @@ package br.com.brunofelix.homehunter.dataprovider.collector;
 import br.com.brunofelix.homehunter.core.application.model.CollectionScope;
 import br.com.brunofelix.homehunter.core.domain.model.CollectedProperty;
 
+import java.text.Normalizer;
 import java.util.Locale;
 import java.util.function.Predicate;
 
@@ -26,9 +27,15 @@ final class CollectionScopeFilter {
         if (scope == null || scope.cities() == null || scope.cities().isEmpty()) {
             return true;
         }
-        String city = property.address().city();
+        String city = Normalizer.normalize(property.address().city(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT);
+
         return scope.cities().stream()
-                .map(c -> c.toUpperCase(Locale.ROOT))
+                .map(c ->
+                        Normalizer.normalize(c, Normalizer.Form.NFD)
+                                .replaceAll("\\p{M}", "")
+                                .toUpperCase(Locale.ROOT))
                 .anyMatch(c -> c.equals(city));
     }
 }

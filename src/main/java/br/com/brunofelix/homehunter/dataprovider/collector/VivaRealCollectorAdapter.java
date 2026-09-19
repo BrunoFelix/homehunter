@@ -14,14 +14,14 @@ import java.time.Duration;
 @Component
 public class VivaRealCollectorAdapter extends GlueApiCollectorSupport {
 
-static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings";
+    static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings";
 
-    private static final String FIXED_PARAMS_BEFORE_PAGE =
+    private static final String FIXED_PARAMS_TEMPLATE =
             "?categoryPage=RESULT&business=SALE&parentId=null&listingType=USED&images=webp"
                     + "&user=6bbc5807-51b7-404f-8be1-4dd1c6e507ab&portal=VIVAREAL"
                     + "&__zt=mtc%3Adeduplication2023%2Cmtc%3Adeboost"
-                    + "&addressCity=Recife&addressZone=&addressStreet="
-                    + "&addressLocationId=BR%3EPernambuco%3ENULL%3ERecife"
+                    + "&addressCity=%s&addressZone=&addressStreet="
+                    + "&addressLocationId=BR%3EPernambuco%3ENULL%3E%s"
                     + "&addressState=Pernambuco&addressNeighborhood="
                     + "&addressPointLat=-8.05774&addressPointLon=-34.882963"
                     + "&addressType=city&unitTypes=APARTMENT&unitTypesV3=APARTMENT"
@@ -41,7 +41,7 @@ static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings
             BigDecimal.valueOf(410000),
             80.0,
             3,
-            FIXED_PARAMS_BEFORE_PAGE,
+            FIXED_PARAMS_TEMPLATE,
             INCLUDE_FIELDS_SUFFIX
     );
 
@@ -60,5 +60,16 @@ static final String DEFAULT_API_URL = "https://glue-api.vivareal.com/v4/listings
 
     VivaRealCollectorAdapter(PortalPropertyNormalizer normalizer, String apiUrl, CurlRunner curlRunner, int maxPages) {
         super(normalizer, apiUrl, curlRunner, VIVA_CONFIG, maxPages, Throttle.none());
+    }
+
+    @Override
+    protected String buildUrl(int page, String city) {
+        String formattedCity = city.replaceAll(" ", "+");
+        String params = FIXED_PARAMS_TEMPLATE.replace("%s", formattedCity);
+        return DEFAULT_API_URL + params
+                + "&page=" + page
+                + "&size=" + PAGE_SIZE
+                + "&from=" + ((page - 1) * PAGE_SIZE)
+                + INCLUDE_FIELDS_SUFFIX;
     }
 }

@@ -68,59 +68,63 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
 
     @Override
     public List<CollectedProperty> collect(CollectionScope scope) {
-        log.info("{} collection started...", config.portalLabel());
+        log.info("{} collection started for cities: {}...", config.portalLabel(), scope.cities());
         List<CollectedProperty> results = new ArrayList<>();
-        int declaredMax = 0;
-        for (int page = 1; ; page++) {
-            try {
-                throttle(page);
-                if (declaredMax > 0) {
-                    log.info("{} loading page {}/{}...", config.portalLabel(), page, declaredMax);
-                } else {
-                    log.info("{} loading page {}...", config.portalLabel(), page);
-                }
-                CurlResult result = curlRunner.execute(buildUrl(page));
-
-                if (result.statusCode() != 200) {
-                    log.warn("{} returned HTTP {} on page {}; stopping pagination.", config.portalLabel(), result.statusCode(), page);
-                    break;
-                }
-
-                String json = new String(result.body(), StandardCharsets.UTF_8);
-                JsonNode root = objectMapper.readTree(json);
-                JsonNode items = itemsOf(root);
-                if (items == null) {
-                    log.warn("{} page {} has unexpected structure; stopping pagination.", config.portalLabel(), page);
-                    break;
-                }
-
-                int parsed = 0;
-                for (JsonNode item : items) {
-                    CollectedProperty property = toProperty(item);
-                    if (property != null) {
-                        results.add(property);
-                        parsed++;
+        
+        for (String city : scope.cities()) {
+            log.info("Collecting from portal: {} for city: {}", config.portalLabel(), city);
+            int declaredMax = 0;
+            for (int page = 1; ; page++) {
+                try {
+                    throttle(page);
+                    if (declaredMax > 0) {
+                        log.info("{} loading page {}/{} for city {}...", config.portalLabel(), page, declaredMax, city);
+                    } else {
+                        log.info("{} loading page {} for city {}...", config.portalLabel(), page, city);
                     }
-                }
+                    CurlResult result = curlRunner.execute(buildUrl(page, city));
 
-                if (page == 1 && parsed == 0) {
-                    log.warn("{} page 1 has no listings (anti-bot engaged?).", config.portalLabel());
-                }
-                if (parsed == 0) {
+                    if (result.statusCode() != 200) {
+                        log.warn("{} returned HTTP {} on page {} for city {}; stopping pagination for this city.", config.portalLabel(), result.statusCode(), page, city);
+                        break;
+                    }
+
+                    String json = new String(result.body(), StandardCharsets.UTF_8);
+                    JsonNode root = objectMapper.readTree(json);
+                    JsonNode items = itemsOf(root);
+                    if (items == null) {
+                        log.warn("{} page {} has unexpected structure for city {}; stopping pagination for this city.", config.portalLabel(), page, city);
+                        break;
+                    }
+
+                    int parsed = 0;
+                    for (JsonNode item : items) {
+                        CollectedProperty property = toProperty(item);
+                        if (property != null) {
+                            results.add(property);
+                            parsed++;
+                        }
+                    }
+
+                    if (page == 1 && parsed == 0) {
+                        log.warn("{} page 1 has no listings for city {} (anti-bot engaged?).", config.portalLabel(), city);
+                    }
+                    if (parsed == 0) {
+                        break;
+                    }
+                    declaredMax = declaredTotalPages(root);
+                    if (declaredMax > 0 && page >= declaredMax) {
+                        log.debug("{} fully collected city {} after {} page(s).", config.portalLabel(), city, page);
+                        break;
+                    }
+                    if (maxPages > 0 && page >= maxPages) {
+                        log.warn("{} reached configured max-pages cap of {} for city {}; stopping pagination.", config.portalLabel(), maxPages, city);
+                        break;
+                    }
+                } catch (IOException | RuntimeException e) {
+                    log.error("{} page {} failed to fetch or parse for city {}: {}", config.portalLabel(), page, city, e.getMessage());
                     break;
                 }
-                declaredMax = declaredTotalPages(root);
-                if (declaredMax > 0 && page >= declaredMax) {
-                    log.debug("{} fully collected after {} page(s).", config.portalLabel(), page);
-                    break;
-                }
-                if (maxPages > 0 && page >= maxPages) {
-                    log.warn("{} reached configured max-pages cap of {}; stopping pagination.", config.portalLabel(), maxPages);
-                    break;
-                }
-            } catch (IOException | RuntimeException e) {
-                log.error("{} page {} failed to fetch or parse: {}", config.portalLabel(), page, e.getMessage());
-                break;
             }
         }
 
@@ -138,7 +142,7 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
                     null,
                     null,
                     "PE",
-                    "Recife",
+                    scope.cities().get(0),
                     "Boa Viagem",
                     config.portalName(),
                     config.sampleExternalId(),
@@ -282,13 +286,15 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
     private BigDecimal parsePrice(JsonNode listing) {
         for (JsonNode info : listing.path("pricingInfos")) {
             if ("SALE".equals(info.path("businessType").asText())) {
-                if (info.path("price").isNumber() && info.path("price").asDouble() > 0) {
-                    BigDecimal price = toBigDecimal(info.path("price").asText());
-                    log.debug("{} - Preço extraído: {} (raw: {})", config.portalLabel(), price, info.path("price").asText());
-                    return price;
-                } else {
-                    log.warn("{} - Preço não numérico ou zero em pricingInfos: {}", config.portalLabel(), info.toString());
+                JsonNode priceNode = info.path("price");
+                if (priceNode.isNumber() || priceNode.isTextual()) {
+                    BigDecimal price = toBigDecimal(priceNode.asText());
+                    if (price != null && price.signum() > 0) {
+                        log.debug("{} - Preço extraído: {} (raw: {})", config.portalLabel(), price, priceNode.asText());
+                        return price;
+                    }
                 }
+                log.warn("{} - Preço não numérico ou zero em pricingInfos: {}", config.portalLabel(), info.toString());
             }
         }
         return null;
@@ -344,12 +350,8 @@ public abstract class GlueApiCollectorSupport implements PropertyCollectorPort {
         return totalCount > 0 ? (totalCount + PAGE_SIZE - 1) / PAGE_SIZE : 0;
     }
 
-    public String buildUrl(int page) {
-        return apiUrl + config.fixedParamsBeforePage()
-                + "&page=" + page
-                + "&size=" + PAGE_SIZE
-                + "&from=" + ((page - 1) * PAGE_SIZE)
-                + config.includeFieldsSuffix();
+    protected String buildUrl(int page, String city) {
+        throw new UnsupportedOperationException("This portal does not support dynamic URL building by city");
     }
 
     interface CurlRunner {
