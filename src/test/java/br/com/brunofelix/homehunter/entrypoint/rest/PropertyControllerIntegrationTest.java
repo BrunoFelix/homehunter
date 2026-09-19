@@ -6,7 +6,9 @@ import br.com.brunofelix.homehunter.core.application.model.SyncStatus;
 import br.com.brunofelix.homehunter.core.application.port.in.GetPropertyInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SearchPropertiesInputPort;
 import br.com.brunofelix.homehunter.core.application.port.in.SyncPropertiesInputPort;
+import br.com.brunofelix.homehunter.core.application.port.out.PropertyRepositoryPort;
 import br.com.brunofelix.homehunter.core.domain.model.*;
+import br.com.brunofelix.homehunter.core.domain.service.PropertyScoringService;
 import br.com.brunofelix.homehunter.entrypoint.rest.mapper.PropertyRestMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -40,6 +43,7 @@ class PropertyControllerIntegrationTest {
     private SearchPropertiesInputPort searchPort;
     private SyncPropertiesInputPort syncPort;
     private GetPropertyInputPort getPort;
+    private PropertyRepositoryPort repository;
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -51,9 +55,13 @@ class PropertyControllerIntegrationTest {
         searchPort = mock(SearchPropertiesInputPort.class);
         syncPort = mock(SyncPropertiesInputPort.class);
         getPort = mock(GetPropertyInputPort.class);
+        repository = mock(PropertyRepositoryPort.class);
+        when(repository.findStatsByNeighborhood(anyString(), anyString(), anyString()))
+                .thenReturn(new PropertyStats(new BigDecimal("10000"), new BigDecimal("100")));
 
         PropertyController controller = new PropertyController(
-                searchPort, syncPort, getPort, new PropertyRestMapper());
+                searchPort, syncPort, getPort,
+                new PropertyRestMapper(new PropertyScoringService(), repository));
 
         MappingJackson2HttpMessageConverter converter =
                 new MappingJackson2HttpMessageConverter(objectMapper);

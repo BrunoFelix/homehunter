@@ -22,16 +22,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Component
 public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
 
+    private static final int DIVISION_SCALE = 4;
+
     private final SpringDataPropertyRepository repository;
     private final PropertyDatabaseMapper mapper;
+    private final NeighborhoodStatsCache statsCache;
 
-    public PropertyRepositoryAdapter(SpringDataPropertyRepository repository, PropertyDatabaseMapper mapper) {
+    public PropertyRepositoryAdapter(SpringDataPropertyRepository repository, PropertyDatabaseMapper mapper, NeighborhoodStatsCache statsCache) {
         this.repository = repository;
         this.mapper = mapper;
+        this.statsCache = statsCache;
     }
 
     @Override
@@ -111,31 +116,39 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
     @Override
     @Transactional(readOnly = true)
     public PropertyStats findStatsByNeighborhood(String state, String city, String neighborhood) {
+        PropertyStats cached = statsCache.get(state, city, neighborhood);
+        if (cached != null) return cached;
+
         List<PropertyEntity> props = repository.findByNeighborhood(state, city, neighborhood);
-        if (props.isEmpty()) {
-            return new PropertyStats(new BigDecimal("10000"), new BigDecimal("100"));
-        }
-        
-        double sumPricePerSqm = 0;
-        double sumCondoPerSqm = 0;
-        int count = 0;
-        
+        BigDecimal sumPricePerSqm = BigDecimal.ZERO;
+        BigDecimal sumCondoPerSqm = BigDecimal.ZERO;
+        int priceCount = 0;
+        int condoCount = 0;
+
         for (PropertyEntity p : props) {
-            if (p.getArea() != null && p.getArea() > 0) {
-                sumPricePerSqm += p.getPrice().doubleValue() / p.getArea();
-                if (p.getCondoFee() != null) {
-                    sumCondoPerSqm += p.getCondoFee().doubleValue() / p.getArea();
-                }
-                count++;
+            if (p.getArea() == null || p.getArea() <= 0 || p.getPrice() == null) continue;
+            BigDecimal area = BigDecimal.valueOf(p.getArea());
+            sumPricePerSqm = sumPricePerSqm.add(p.getPrice().divide(area, DIVISION_SCALE, RoundingMode.HALF_UP));
+            priceCount++;
+            if (p.getCondoFee() != null) {
+                sumCondoPerSqm = sumCondoPerSqm.add(p.getCondoFee().divide(area, DIVISION_SCALE, RoundingMode.HALF_UP));
+                condoCount++;
             }
         }
-        
-        if (count == 0) return new PropertyStats(new BigDecimal("10000"), new BigDecimal("100"));
-        
-        return new PropertyStats(
-            BigDecimal.valueOf(sumPricePerSqm / count),
-            BigDecimal.valueOf(sumCondoPerSqm / count)
-        );
+
+        PropertyStats stats;
+        if (priceCount == 0) {
+            stats = new PropertyStats(null, null);
+        } else {
+            BigDecimal avgPrice = sumPricePerSqm.divide(BigDecimal.valueOf(priceCount), DIVISION_SCALE, RoundingMode.HALF_UP);
+            BigDecimal avgCondo = condoCount > 0
+                    ? sumCondoPerSqm.divide(BigDecimal.valueOf(condoCount), DIVISION_SCALE, RoundingMode.HALF_UP)
+                    : null;
+            stats = new PropertyStats(avgPrice, avgCondo);
+        }
+
+        statsCache.put(state, city, neighborhood, stats);
+        return stats;
     }
 
     @Override
@@ -144,8 +157,10 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
         List<PropertyEntity> entities = properties.stream()
                 .map(mapper::toEntity)
                 .collect(Collectors.toList());
-        return repository.saveAll(entities).stream()
+        List<Property> saved = repository.saveAll(entities).stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
+        statsCache.clear();
+        return saved;
     }
 }
