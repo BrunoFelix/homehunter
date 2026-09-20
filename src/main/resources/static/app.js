@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const citySelect = document.getElementById('city-select');
     const minPrice = document.getElementById('min-price');
     const maxPrice = document.getElementById('max-price');
+    const minArea = document.getElementById('min-area');
+    const maxArea = document.getElementById('max-area');
+    const maxCondoFee = document.getElementById('max-condo-fee');
     const sortSelect = document.getElementById('sort-select');
     const sizeSelect = document.getElementById('size-select');
     const typeSelect = document.getElementById('type-select');
@@ -92,6 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeSelect.value) url.searchParams.append('type', typeSelect.value);
         if (minPrice.value) url.searchParams.append('minPrice', minPrice.value);
         if (maxPrice.value) url.searchParams.append('maxPrice', maxPrice.value);
+        if (minArea.value) url.searchParams.append('minArea', minArea.value);
+        if (maxArea.value) url.searchParams.append('maxArea', maxArea.value);
+        if (maxCondoFee.value) url.searchParams.append('maxCondoFee', maxCondoFee.value);
         url.searchParams.append('sort', sortSelect.value);
         url.searchParams.append('size', sizeSelect.value);
         url.searchParams.append('page', currentPage);

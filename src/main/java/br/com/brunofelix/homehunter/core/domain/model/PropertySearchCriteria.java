@@ -11,6 +11,7 @@ public record PropertySearchCriteria(
         BigDecimal maxPrice,
         Double minArea,
         Double maxArea,
+        BigDecimal maxCondoFee,
         Integer bedrooms,
         int page,
         int size,

@@ -89,6 +89,12 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
             if (criteria.maxArea() != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("area"), criteria.maxArea()));
             }
+            if (criteria.maxCondoFee() != null) {
+                predicates.add(cb.or(
+                    cb.lessThanOrEqualTo(root.get("condoFee"), criteria.maxCondoFee()),
+                    cb.isNull(root.get("condoFee"))
+                ));
+            }
             if (criteria.bedrooms() != null) {
                 predicates.add(cb.equal(root.get("bedrooms"), criteria.bedrooms()));
             }

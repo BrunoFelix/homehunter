@@ -260,29 +260,67 @@
 
   @scope (.scope.filter-bar) to (.scope) {
     #filters {
-      padding: 1rem;
-      background-color: var(--card-background);
-      border-radius: var(--_radius, 20px);
-      box-shadow: 0 4px 6px -1px oklch(from black l c h / 10%);
-      margin-block-end: 2rem;
+      padding: 1.5rem 2rem;
+      background: linear-gradient(135deg, var(--card-background) 0%, #ffffff 100%);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+      margin-block-end: 2.5rem;
+      gap: 1rem;
     }
 
     #filters select,
-    #filters input,
-    #filters button {
-      padding: 0.5rem 0.1rem;
-      border: 1px solid var(--color-light);
-      border-radius: calc(infinity * 1px);
-      background-color: var(--color-lightest);
-      color: var(--color-darkest);
-      cursor: pointer;
+    #filters input {
+      padding: 0.65rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: #1f2937;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+      &:hover {
+        border-color: #9ca3af;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #c34a36;
+        box-shadow: 0 0 0 3px rgba(195, 74, 54, 0.15);
+      }
+    }
+
+    #filters input {
+      max-width: 140px;
+    }
+
+    #filters select {
+      max-width: 180px;
     }
 
     #filters #search-btn {
-      padding: 0.5rem 0.7rem;
-      background-color: var(--color-darkest);
-      color: var(--color-lightest);
-      font-weight: bold;
+      padding: 0.65rem 1.5rem;
+      background-color: #c34a36;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px -1px rgba(195, 74, 54, 0.2), 0 2px 4px -1px rgba(195, 74, 54, 0.1);
+
+      &:hover {
+        background-color: #a83d2c;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(195, 74, 54, 0.25);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
     }
   }
 }

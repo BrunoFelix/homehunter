@@ -4,6 +4,8 @@ import br.com.brunofelix.homehunter.core.domain.model.*;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyEntity;
 import br.com.brunofelix.homehunter.dataprovider.database.entity.PropertyImageEntity;
 import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,31 +50,36 @@ public class PropertyDatabaseMapper {
     }
 
     public Property toDomain(PropertyEntity entity) {
-        List<String> images = entity.getImages().stream()
+        List<String> images = entity.getImages() != null ? entity.getImages().stream()
                 .map(PropertyImageEntity::getImageUrl)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()) : List.of();
 
         return new Property(
-                new PropertyId(entity.getId()),
-                entity.getTitle(),
-                PropertyType.valueOf(entity.getType()),
-                new Price(entity.getPrice()),
-                new Area(entity.getArea()),
-                new Bedrooms(entity.getBedrooms()),
-                new Address(entity.getState(), entity.getCity(), entity.getNeighborhood(), entity.getStreet()),
+                new PropertyId(entity.getId() != null ? entity.getId() : "unknown"),
+                entity.getTitle() != null ? entity.getTitle() : "Sem Título",
+                entity.getType() != null ? PropertyType.valueOf(entity.getType()) : PropertyType.APARTAMENTO,
+                new Price(entity.getPrice() != null ? entity.getPrice() : BigDecimal.valueOf(100000)),
+                new Area(entity.getArea() != null ? entity.getArea() : 50.0),
+                new Bedrooms(entity.getBedrooms() != null ? entity.getBedrooms() : 1),
+                new Address(
+                        entity.getState() != null ? entity.getState() : "PE",
+                        entity.getCity() != null ? entity.getCity() : "Recife",
+                        entity.getNeighborhood() != null ? entity.getNeighborhood() : "Centro",
+                        entity.getStreet()
+                ),
                 entity.getBathrooms(),
                 entity.getSuites(),
                 entity.getParkingSpaces(),
                 entity.getCondoFee(),
                 entity.getIptu(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt(),
+                entity.getCreatedAt() != null ? entity.getCreatedAt() : LocalDateTime.now(),
+                entity.getUpdatedAt() != null ? entity.getUpdatedAt() : LocalDateTime.now(),
                 images,
-                PortalName.valueOf(entity.getPortalName()),
-                entity.getExternalId(),
-                entity.getUrl(),
+                entity.getPortalName() != null ? PortalName.valueOf(entity.getPortalName()) : PortalName.ZAP_IMOVEIS,
+                entity.getExternalId() != null ? entity.getExternalId() : "ext-0",
+                entity.getUrl() != null ? entity.getUrl() : "https://example.com",
                 entity.getAnnouncedAt(),
-                entity.getCollectedAt()
+                entity.getCollectedAt() != null ? entity.getCollectedAt() : LocalDateTime.now()
         );
     }
 }

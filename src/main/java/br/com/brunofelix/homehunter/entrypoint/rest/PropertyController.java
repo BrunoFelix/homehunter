@@ -63,6 +63,7 @@ public class PropertyController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Double minArea,
             @RequestParam(required = false) Double maxArea,
+            @RequestParam(required = false) BigDecimal maxCondoFee,
             @RequestParam(required = false) Integer bedrooms,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -70,7 +71,7 @@ public class PropertyController {
     ) {
         // ... need to handle sort logic
         PropertySearchCriteria criteria = new PropertySearchCriteria(
-                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, bedrooms, page, size, sort
+                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, maxCondoFee, bedrooms, page, size, sort
         );
         PagedResult<Property> result = searchPort.search(criteria);
         return ResponseEntity.ok(mapper.toPagedDto(result));

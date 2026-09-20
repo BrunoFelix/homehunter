@@ -167,6 +167,21 @@ class PropertyControllerIntegrationTest {
     }
 
     @Test
+    void searchEndpoint_withMaxCondoFee_shouldForwardToCriteria() throws Exception {
+        when(searchPort.search(any())).thenReturn(
+                new PagedResult<>(List.of(), 0, 10, 0, 0));
+
+        mockMvc.perform(get("/api/v1/properties")
+                        .param("maxCondoFee", "500"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<PropertySearchCriteria> captor =
+                ArgumentCaptor.forClass(PropertySearchCriteria.class);
+        verify(searchPort).search(captor.capture());
+        assertEquals(0, new BigDecimal("500").compareTo(captor.getValue().maxCondoFee()));
+    }
+
+    @Test
     void searchEndpoint_withPagination_shouldForwardPageAndSize() throws Exception {
         when(searchPort.search(any())).thenReturn(
                 new PagedResult<>(List.of(), 2, 5, 0, 0));
