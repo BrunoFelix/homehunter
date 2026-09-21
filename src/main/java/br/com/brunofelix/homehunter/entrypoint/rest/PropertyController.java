@@ -65,13 +65,15 @@ public class PropertyController {
             @RequestParam(required = false) Double maxArea,
             @RequestParam(required = false) BigDecimal maxCondoFee,
             @RequestParam(required = false) Integer bedrooms,
+            @RequestParam(required = false) Boolean favorite,
+            @RequestParam(required = false) Boolean excludeSeen,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String sort
     ) {
         // ... need to handle sort logic
         PropertySearchCriteria criteria = new PropertySearchCriteria(
-                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, maxCondoFee, bedrooms, page, size, sort
+                state, city, neighborhood, type, minPrice, maxPrice, minArea, maxArea, maxCondoFee, bedrooms, favorite, excludeSeen, page, size, sort
         );
         PagedResult<Property> result = searchPort.search(criteria);
         return ResponseEntity.ok(mapper.toPagedDto(result));
@@ -81,6 +83,38 @@ public class PropertyController {
     @Operation(summary = "Get property details by ID including all portal sources")
     public ResponseEntity<PropertyResponseDto> getById(@PathVariable String id) {
         Optional<Property> property = getPort.getById(new PropertyId(id));
+        return property.map(p -> ResponseEntity.ok(mapper.toDto(p)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/favorite")
+    @Operation(summary = "Toggle or set favorite status of a property")
+    public ResponseEntity<PropertyResponseDto> toggleFavorite(
+            @PathVariable String id,
+            @RequestBody(required = false) java.util.Map<String, Boolean> body
+    ) {
+        Optional<Property> property;
+        if (body != null && body.containsKey("favorite")) {
+            property = getPort.updateFavorite(new PropertyId(id), body.get("favorite"));
+        } else {
+            property = getPort.toggleFavorite(new PropertyId(id));
+        }
+        return property.map(p -> ResponseEntity.ok(mapper.toDto(p)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/seen")
+    @Operation(summary = "Toggle or set seen status of a property")
+    public ResponseEntity<PropertyResponseDto> toggleSeen(
+            @PathVariable String id,
+            @RequestBody(required = false) java.util.Map<String, Boolean> body
+    ) {
+        Optional<Property> property;
+        if (body != null && body.containsKey("seen")) {
+            property = getPort.updateSeen(new PropertyId(id), body.get("seen"));
+        } else {
+            property = getPort.toggleSeen(new PropertyId(id));
+        }
         return property.map(p -> ResponseEntity.ok(mapper.toDto(p)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

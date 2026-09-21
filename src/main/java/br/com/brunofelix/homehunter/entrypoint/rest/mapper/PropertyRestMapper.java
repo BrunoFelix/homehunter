@@ -63,7 +63,9 @@ public class PropertyRestMapper {
                 property.getUpdatedAt(),
                 property.getPortalName().name(),
                 property.getExternalId(),
-                score
+                score,
+                property.isFavorite(),
+                property.isSeen()
         );
     }
 

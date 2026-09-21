@@ -30,8 +30,14 @@ public class Property {
     private String url;
     private LocalDateTime announcedAt;
     private LocalDateTime collectedAt;
+    private boolean favorite;
+    private boolean seen;
 
     public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> images, PortalName portalName, String externalId, String url, LocalDateTime announcedAt, LocalDateTime collectedAt) {
+        this(id, title, type, price, area, bedrooms, address, bathrooms, suites, parkingSpaces, condoFee, iptu, createdAt, updatedAt, images, portalName, externalId, url, announcedAt, collectedAt, false, false);
+    }
+
+    public Property(PropertyId id, String title, PropertyType type, Price price, Area area, Bedrooms bedrooms, Address address, Integer bathrooms, Integer suites, Integer parkingSpaces, BigDecimal condoFee, BigDecimal iptu, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> images, PortalName portalName, String externalId, String url, LocalDateTime announcedAt, LocalDateTime collectedAt, boolean favorite, boolean seen) {
         if (id == null) throw new DomainException("PropertyId is required");
         if (title == null || title.isBlank()) throw new DomainException("Title is required");
         if (type == null) throw new DomainException("PropertyType is required");
@@ -65,6 +71,8 @@ public class Property {
         this.url = url;
         this.announcedAt = announcedAt;
         this.collectedAt = collectedAt;
+        this.favorite = favorite;
+        this.seen = seen;
     }
 
     public static Property createFrom(CollectedProperty collected, LocalDateTime now) {
@@ -146,4 +154,10 @@ public class Property {
     public String getUrl() { return url; }
     public LocalDateTime getAnnouncedAt() { return announcedAt; }
     public LocalDateTime getCollectedAt() { return collectedAt; }
+    public boolean isFavorite() { return favorite; }
+    public boolean isSeen() { return seen; }
+    public void setFavorite(boolean favorite) { this.favorite = favorite; }
+    public void setSeen(boolean seen) { this.seen = seen; }
+    public void toggleFavorite() { this.favorite = !this.favorite; }
+    public void toggleSeen() { this.seen = !this.seen; }
 }

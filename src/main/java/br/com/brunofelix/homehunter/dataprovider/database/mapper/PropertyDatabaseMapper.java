@@ -36,6 +36,8 @@ public class PropertyDatabaseMapper {
                 .collectedAt(domain.getCollectedAt())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
+                .favorite(domain.isFavorite())
+                .seen(domain.isSeen())
                 .build();
 
         List<PropertyImageEntity> imageEntities = domain.getImages().stream()
@@ -79,7 +81,9 @@ public class PropertyDatabaseMapper {
                 entity.getExternalId() != null ? entity.getExternalId() : "ext-0",
                 entity.getUrl() != null ? entity.getUrl() : "https://example.com",
                 entity.getAnnouncedAt(),
-                entity.getCollectedAt() != null ? entity.getCollectedAt() : LocalDateTime.now()
+                entity.getCollectedAt() != null ? entity.getCollectedAt() : LocalDateTime.now(),
+                entity.isFavorite(),
+                entity.isSeen()
         );
     }
 }

@@ -16,5 +16,6 @@ public interface PropertyRepositoryPort {
     List<String> findAllStates();
     List<String> findCitiesByState(String state);
     List<Property> saveAll(List<Property> properties);
+    Property save(Property property);
     PropertyStats findStatsByNeighborhood(String state, String city, String neighborhood);
 }

@@ -98,6 +98,12 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
             if (criteria.bedrooms() != null) {
                 predicates.add(cb.equal(root.get("bedrooms"), criteria.bedrooms()));
             }
+            if (criteria.favorite() != null && criteria.favorite()) {
+                predicates.add(cb.isTrue(root.get("favorite")));
+            }
+            if (criteria.excludeSeen() != null && criteria.excludeSeen()) {
+                predicates.add(cb.isFalse(root.get("seen")));
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -168,5 +174,14 @@ public class PropertyRepositoryAdapter implements PropertyRepositoryPort {
                 .collect(Collectors.toList());
         statsCache.clear();
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public Property save(Property property) {
+        PropertyEntity entity = mapper.toEntity(property);
+        PropertyEntity saved = repository.save(entity);
+        statsCache.clear();
+        return mapper.toDomain(saved);
     }
 }

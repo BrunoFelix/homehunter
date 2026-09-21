@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const minArea = document.getElementById('min-area');
     const maxArea = document.getElementById('max-area');
     const maxCondoFee = document.getElementById('max-condo-fee');
+    const filterFavorite = document.getElementById('filter-favorite');
+    const filterExcludeSeen = document.getElementById('filter-exclude-seen');
     const sortSelect = document.getElementById('sort-select');
     const sizeSelect = document.getElementById('size-select');
     const typeSelect = document.getElementById('type-select');
@@ -98,6 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (minArea.value) url.searchParams.append('minArea', minArea.value);
         if (maxArea.value) url.searchParams.append('maxArea', maxArea.value);
         if (maxCondoFee.value) url.searchParams.append('maxCondoFee', maxCondoFee.value);
+        if (filterFavorite.checked) url.searchParams.append('favorite', 'true');
+        if (filterExcludeSeen.checked) url.searchParams.append('excludeSeen', 'true');
         url.searchParams.append('sort', sortSelect.value);
         url.searchParams.append('size', sizeSelect.value);
         url.searchParams.append('page', currentPage);
@@ -160,6 +164,59 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                     }
+
+                    if (property.seen) {
+                        card.style.opacity = '0.75';
+                    }
+
+                    const favoriteBtn = document.createElement('button');
+                    favoriteBtn.innerHTML = property.favorite ? '❤️' : '🤍';
+                    favoriteBtn.title = property.favorite ? 'Desfavoritar' : 'Favoritar';
+                    favoriteBtn.style.cssText = 'position: absolute; top: 15px; left: 15px; z-index: 3; background: white; border: 1px solid #ccc; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 1.1rem;';
+                    favoriteBtn.onclick = () => {
+                        fetch(`/api/v1/properties/${property.id}/favorite`, { method: 'PATCH' })
+                            .then(res => res.json())
+                            .then(updated => {
+                                property.favorite = updated.favorite;
+                                favoriteBtn.innerHTML = updated.favorite ? '❤️' : '🤍';
+                                favoriteBtn.title = updated.favorite ? 'Desfavoritar' : 'Favoritar';
+                            });
+                    };
+                    card.appendChild(favoriteBtn);
+
+                    const seenBtn = document.createElement('button');
+                    seenBtn.innerHTML = property.seen ? '👁️ Visto' : '👁️ Marcar Visto';
+                    seenBtn.title = 'Marcar como visto / não visto';
+                    seenBtn.style.cssText = 'position: absolute; top: 15px; left: 60px; z-index: 3; background: white; border: 1px solid #ccc; border-radius: 18px; padding: 4px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);';
+                    seenBtn.onclick = () => {
+                        fetch(`/api/v1/properties/${property.id}/seen`, { method: 'PATCH' })
+                            .then(res => res.json())
+                            .then(updated => {
+                                property.seen = updated.seen;
+                                seenBtn.innerHTML = updated.seen ? '👁️ Visto' : '👁️ Marcar Visto';
+                                card.style.opacity = updated.seen ? '0.75' : '1';
+                            });
+                    };
+                    card.appendChild(seenBtn);
+
+                    const purchaseBtn = card.querySelector('.purchase-button');
+                    purchaseBtn.addEventListener('click', () => {
+                        if (!property.seen) {
+                            fetch(`/api/v1/properties/${property.id}/seen`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ seen: true })
+                            })
+                            .then(res => res.json())
+                            .then(updated => {
+                                property.seen = updated.seen;
+                                seenBtn.innerHTML = '👁️ Visto';
+                                card.style.opacity = '0.75';
+                            })
+                            .catch(() => {});
+                        }
+                    });
+
                     resultsGrid.appendChild(card);
                 });
 

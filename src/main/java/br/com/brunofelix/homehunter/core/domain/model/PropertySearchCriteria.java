@@ -13,6 +13,8 @@ public record PropertySearchCriteria(
         Double maxArea,
         BigDecimal maxCondoFee,
         Integer bedrooms,
+        Boolean favorite,
+        Boolean excludeSeen,
         int page,
         int size,
         String sort

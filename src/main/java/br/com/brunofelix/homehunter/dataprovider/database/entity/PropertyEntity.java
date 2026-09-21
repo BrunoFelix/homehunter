@@ -93,4 +93,12 @@ public class PropertyEntity {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "favorite", nullable = false)
+    @Builder.Default
+    private boolean favorite = false;
+
+    @Column(name = "seen", nullable = false)
+    @Builder.Default
+    private boolean seen = false;
 }
