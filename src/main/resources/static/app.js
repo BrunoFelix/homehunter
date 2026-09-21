@@ -172,10 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const actionsDiv = document.createElement('div');
                     actionsDiv.className = '_card-actions';
 
-                    const favoriteBtn = document.createElement('button');
+                    const favoriteBtn = document.createElement('a');
+                    favoriteBtn.href = '#';
                     favoriteBtn.className = '_card-action-btn';
                     favoriteBtn.innerHTML = property.favorite ? '❤️ Favorito' : '🤍 Favoritar';
-                    favoriteBtn.onclick = () => {
+                    favoriteBtn.onclick = (e) => {
+                        e.preventDefault();
                         fetch(`/api/v1/properties/${property.id}/favorite`, { method: 'PATCH' })
                             .then(res => res.json())
                             .then(updated => {
@@ -185,10 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     actionsDiv.appendChild(favoriteBtn);
 
-                    const seenBtn = document.createElement('button');
+                    const seenBtn = document.createElement('a');
+                    seenBtn.href = '#';
                     seenBtn.className = '_card-action-btn';
                     seenBtn.innerHTML = property.seen ? '👁️ Visto' : '👁️ Marcar Visto';
-                    seenBtn.onclick = () => {
+                    seenBtn.onclick = (e) => {
+                        e.preventDefault();
                         fetch(`/api/v1/properties/${property.id}/seen`, { method: 'PATCH' })
                             .then(res => res.json())
                             .then(updated => {
