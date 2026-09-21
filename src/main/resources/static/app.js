@@ -124,13 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Add loading indicator for images
                     const imagesHtml = property.images && property.images.length > 0
                         ? property.images.slice(0, 4).map(img => `<img src="${img}" alt="${property.title}" width="400" height="400" referrerpolicy="no-referrer" onload="this.style.background='none'" />`).join('')
-                        : "{{Sem Imagem}}";
+                        : `<img src="" width="400" height="400" alt="Sem imagem" referrerpolicy="no-referrer" onload="this.style.background='none'" />`;
 
                     card.innerHTML = `
                         <span class="_badge-ratio">Nota: ${property.score}</span>
                         <div class="_card-actions">
-                            <a href="#" class="_card-action-btn favorite-btn">${property.favorite ? '❤️ Favorito' : '🤍 Favoritar'}</a>
-                            <a href="#" class="_card-action-btn seen-btn">${property.seen ? '👁️ Visto' : '👁️ Marcar Visto'}</a>
+                            <a href="#" class="_card-action-btn favorite-btn">${property.favorite ? '❤️' : '🤍'}</a>
+                            <a href="#" class="_card-action-btn seen-btn">${property.seen ? '✔️' : '👁️'}</a>
                         </div>
                         <h2 class="_heading | -fluid-text -trim-both">${property.title}</h2>
                         <p class="_category | -trim-both">${property.type == 'APARTAMENTO' ? 'APTO' : property.type} - ${property.area}m² ${isNew ? '- **Novo!**' : ''}</p>
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (property.seen) {
-                        card.style.opacity = '0.75';
+                        card.style.opacity = '0.5';
                     }
 
                     card.querySelector('.favorite-btn').onclick = (e) => {
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .then(res => res.json())
                             .then(updated => {
                                 property.favorite = updated.favorite;
-                                e.target.innerHTML = updated.favorite ? '❤️ Favorito' : '🤍 Favoritar';
+                                e.target.innerHTML = updated.favorite ? '❤️' : '🤍';
                             });
                     };
 
@@ -192,8 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         .then(res => res.json())
                         .then(updated => {
                             property.seen = updated.seen;
-                            seenBtn.innerHTML = updated.seen ? '👁️ Visto' : '👁️ Marcar Visto';
-                            card.style.opacity = updated.seen ? '0.75' : '1';
+                            seenBtn.innerHTML = updated.seen ? '✔️' : '👁️';
+                            card.style.opacity = updated.seen ? '0.5' : '1';
                         })
                         .catch(() => {});
                     };
