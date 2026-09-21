@@ -128,6 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     card.innerHTML = `
                         <span class="_badge-ratio">Nota: ${property.score}</span>
+                        <div class="_card-actions">
+                            <a href="#" class="_card-action-btn favorite-btn">${property.favorite ? '❤️ Favorito' : '🤍 Favoritar'}</a>
+                            <a href="#" class="_card-action-btn seen-btn">${property.seen ? '👁️ Visto' : '👁️ Marcar Visto'}</a>
+                        </div>
                         <h2 class="_heading | -fluid-text -trim-both">${property.title}</h2>
                         <p class="_category | -trim-both">${property.type == 'APARTAMENTO' ? 'APTO' : property.type} - ${property.area}m² ${isNew ? '- **Novo!**' : ''}</p>
                         <div class="_thumbnail-stack" style="cursor: pointer;">
@@ -142,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </p>
                             <p>
                                 ${property.condoFee && property.condoFee > 1 ? `Condomínio: R$ ${property.condoFee}` : ''}
-                                ${property.iptu && property.iptu > 1 ? ` | IPTU: R$ ${property.iptu}` : ''}
+                                ${property.iptu && property.iptu > 1 ? ` | IPTU: ${property.iptu}` : ''}
                             </p>
                             <p class="_description | -line-clamp">${property.state || ''} | ${property.city || ''} | ${property.neighborhood || ''}</p>
                         </div>
@@ -169,57 +173,40 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.style.opacity = '0.75';
                     }
 
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = '_card-actions';
-
-                    const favoriteBtn = document.createElement('a');
-                    favoriteBtn.href = '#';
-                    favoriteBtn.className = '_card-action-btn';
-                    favoriteBtn.innerHTML = property.favorite ? '❤️ Favorito' : '🤍 Favoritar';
-                    favoriteBtn.onclick = (e) => {
+                    card.querySelector('.favorite-btn').onclick = (e) => {
                         e.preventDefault();
                         fetch(`/api/v1/properties/${property.id}/favorite`, { method: 'PATCH' })
                             .then(res => res.json())
                             .then(updated => {
                                 property.favorite = updated.favorite;
-                                favoriteBtn.innerHTML = updated.favorite ? '❤️ Favorito' : '🤍 Favoritar';
+                                e.target.innerHTML = updated.favorite ? '❤️ Favorito' : '🤍 Favoritar';
                             });
                     };
-                    actionsDiv.appendChild(favoriteBtn);
 
-                    const seenBtn = document.createElement('a');
-                    seenBtn.href = '#';
-                    seenBtn.className = '_card-action-btn';
-                    seenBtn.innerHTML = property.seen ? '👁️ Visto' : '👁️ Marcar Visto';
+                    const markAsSeen = (id, card, seenBtn) => {
+                        fetch(`/api/v1/properties/${id}/seen`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ seen: true })
+                        })
+                        .then(res => res.json())
+                        .then(updated => {
+                            property.seen = updated.seen;
+                            seenBtn.innerHTML = updated.seen ? '👁️ Visto' : '👁️ Marcar Visto';
+                            card.style.opacity = updated.seen ? '0.75' : '1';
+                        })
+                        .catch(() => {});
+                    };
+
+                    const seenBtn = card.querySelector('.seen-btn');
                     seenBtn.onclick = (e) => {
                         e.preventDefault();
-                        fetch(`/api/v1/properties/${property.id}/seen`, { method: 'PATCH' })
-                            .then(res => res.json())
-                            .then(updated => {
-                                property.seen = updated.seen;
-                                seenBtn.innerHTML = updated.seen ? '👁️ Visto' : '👁️ Marcar Visto';
-                                card.style.opacity = updated.seen ? '0.75' : '1';
-                            });
+                        markAsSeen(property.id, card, seenBtn);
                     };
-                    actionsDiv.appendChild(seenBtn);
 
-                    card.appendChild(actionsDiv);
-
-                    const purchaseBtn = card.querySelector('.purchase-button');
-                    purchaseBtn.addEventListener('click', () => {
+                    card.querySelector('.purchase-button').addEventListener('click', () => {
                         if (!property.seen) {
-                            fetch(`/api/v1/properties/${property.id}/seen`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ seen: true })
-                            })
-                            .then(res => res.json())
-                            .then(updated => {
-                                property.seen = updated.seen;
-                                seenBtn.innerHTML = '👁️ Visto';
-                                card.style.opacity = '0.75';
-                            })
-                            .catch(() => {});
+                            markAsSeen(property.id, card, seenBtn);
                         }
                     });
 
